@@ -1,0 +1,354 @@
+# Recipe and Shopping Organizer - Monorepo .gitignore
+# Covers: Flutter (mobile) + FastAPI (backend)
+
+#########################
+# Flutter/Dart (Mobile) #
+#########################
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/apps/mobile/android/app/debug
+/apps/mobile/android/app/profile
+/apps/mobile/android/app/release
+
+# Flutter build outputs
+/apps/mobile/build/
+/apps/mobile/.flutter-plugins
+/apps/mobile/.flutter-plugins-dependencies
+
+# iOS/XCode
+/apps/mobile/ios/Flutter/flutter_export_environment.sh
+/apps/mobile/ios/Flutter/Generated.xcconfig
+/apps/mobile/ios/Pods/
+/apps/mobile/ios/.symlinks/
+/apps/mobile/ios/Flutter/App.framework
+/apps/mobile/ios/Flutter/Flutter.framework
+/apps/mobile/ios/Flutter/Flutter.podspec
+/apps/mobile/ios/ServiceDefinitions.json
+/apps/mobile/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+/apps/mobile/macos/Flutter/GeneratedPluginRegistrant.swift
+/apps/mobile/macos/Pods/
+
+# Coverage
+/apps/mobile/coverage/
+
+# Web
+/apps/mobile/web/
+
+# Test related
+/apps/mobile/test/.test_coverage.dart
+/apps/mobile/coverage/
+
+#########################
+# Python/FastAPI (Backend) #
+#########################
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+/apps/backend/.env
+/apps/backend/.env.*
+!apps/backend/.env.example
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# FastAPI/SQLAlchemy
+/apps/backend/app.db
+/apps/backend/test.db
+/apps/backend/alembic/versions/__pycache__/
+
+# uvicorn
+/apps/backend/*.log
+
+#########################
+# Docker                #
+#########################
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+#########################
+# IDE & Editors         #
+#########################
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs (PyCharm, IntelliJ, Android Studio)
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+#########################
+# OS Files              #
+#########################
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.nfs*
+
+#########################
+# Project Specific      #
+#########################
+
+# Local development scripts
+/scripts/local/
+*.local.sh
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Database dumps
+*.sql
+*.dump
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Environment-specific configs
+.env.local
+.env.*.local
+
+# CI/CD
+.github/secrets/
