@@ -15,6 +15,7 @@ from fastapi.openapi.utils import get_openapi
 from ..api.dependencies import get_current_superuser
 from ..core.utils.rate_limit import rate_limiter
 from ..middleware.client_cache_middleware import ClientCacheMiddleware
+from ..middleware.cors_dev_middleware import CorsDevMiddleware
 from ..middleware.logger_middleware import LoggerMiddleware
 from ..models import *  # noqa: F403
 from .config import (
@@ -213,14 +214,21 @@ def create_application(
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
 
     if isinstance(settings, CORSSettings):
+        # Use allow_credentials=False when using wildcard origin so preflight gets 200
+        # (allow_credentials=True + allow_origins=["*"] is invalid per CORS spec and can cause 400)
+        use_credentials = "*" not in settings.CORS_ORIGINS
         application.add_middleware(
             CORSMiddleware,
             allow_origins=settings.CORS_ORIGINS,
-            allow_credentials=True,
+            allow_credentials=use_credentials,
             allow_methods=settings.CORS_METHODS,
             allow_headers=settings.CORS_HEADERS,
+            expose_headers=["Authorization"],
         )
     application.add_middleware(LoggerMiddleware)
+    # In local dev, allow any localhost origin so Flutter web (random port) works
+    if isinstance(settings, EnvironmentSettings) and settings.ENVIRONMENT == EnvironmentOption.LOCAL:
+        application.add_middleware(CorsDevMiddleware)
     if isinstance(settings, EnvironmentSettings):
         if settings.ENVIRONMENT != EnvironmentOption.PRODUCTION:
             docs_router = APIRouter()

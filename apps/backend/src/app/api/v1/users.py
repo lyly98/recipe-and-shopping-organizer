@@ -9,9 +9,38 @@ from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import DuplicateValueException, ForbiddenException, NotFoundException
 from ...core.security import blacklist_token, get_password_hash, oauth2_scheme
 from ...crud.crud_users import crud_users
-from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserUpdate
+from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserUpdate, UserRegister
 
 router = APIRouter(tags=["users"])
+
+
+@router.post("/register", response_model=UserRead, status_code=201)
+async def register_user(
+    body: UserRegister, db: Annotated[AsyncSession, Depends(async_get_db)]
+) -> dict[str, Any]:
+    """Register a new user with email, username and password. Name is derived from username."""
+    if await crud_users.exists(db=db, email=body.email):
+        raise DuplicateValueException("Email is already registered")
+
+    if await crud_users.exists(db=db, username=body.username):
+        raise DuplicateValueException("Username not available")
+
+    # Derive display name from username (User model requires name)
+    name = body.username[:30] if len(body.username) <= 30 else body.username[:27] + "..."
+    user_internal_dict = {
+        "name": name,
+        "username": body.username,
+        "email": body.email,
+        "hashed_password": get_password_hash(password=body.password),
+    }
+    user_internal = UserCreateInternal(**user_internal_dict)
+    created_user = await crud_users.create(db=db, object=user_internal, schema_to_select=UserRead)
+
+    if created_user is None:
+        raise NotFoundException("Failed to create user")
+
+    await db.commit()
+    return created_user
 
 
 @router.post("/user", response_model=UserRead, status_code=201)
@@ -36,6 +65,7 @@ async def write_user(
     if created_user is None:
         raise NotFoundException("Failed to create user")
 
+    await db.commit()
     return created_user
 
 

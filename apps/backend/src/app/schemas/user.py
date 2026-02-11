@@ -33,6 +33,16 @@ class UserCreate(UserBase):
     password: Annotated[str, Field(pattern=r"^.{8,}|[0-9]+|[A-Z]+|[a-z]+|[^a-zA-Z0-9]+$", examples=["Str1ngst!"])]
 
 
+class UserRegister(BaseModel):
+    """Request body for the public register endpoint (email, username, password only)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: Annotated[EmailStr, Field(examples=["user@example.com"])]
+    username: Annotated[str, Field(min_length=2, max_length=20, pattern=r"^[a-z0-9]+$", examples=["johndoe"])]
+    password: Annotated[str, Field(min_length=8, examples=["Str1ngst!"])]
+
+
 class UserCreateInternal(UserBase):
     hashed_password: str
 
