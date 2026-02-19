@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 
+import 'app_palette.dart';
+
 class AppTheme {
-  // Light Theme
+  // Light Theme (Figma design system)
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-      brightness: Brightness.light,
+    colorScheme: ColorScheme.light(
+      primary: AppPalette.primaryOrange,
+      secondary: AppPalette.primaryPink,
+      tertiary: AppPalette.primaryBlue,
+      surface: AppPalette.cream,
+      onPrimary: AppPalette.white,
+      onSecondary: AppPalette.white,
+      onSurface: AppPalette.darkGray,
+      onSurfaceVariant: AppPalette.mediumGray,
+      outline: AppPalette.lightGray,
     ),
     appBarTheme: const AppBarTheme(
       centerTitle: true,
@@ -48,14 +57,22 @@ class AppTheme {
     dividerTheme: const DividerThemeData(thickness: 1),
   );
 
-  // Dark Theme
+  // Dark Theme (dark pastels)
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-      brightness: Brightness.dark,
+    colorScheme: ColorScheme.dark(
+      primary: AppPalette.darkPastelPrimaryOrange,
+      secondary: AppPalette.darkPastelPrimaryPink,
+      tertiary: AppPalette.darkPastelPrimaryBlue,
+      surface: AppPalette.darkPastelSurface,
+      onPrimary: AppPalette.white,
+      onSecondary: AppPalette.white,
+      onSurface: AppPalette.darkPastelOnBackground,
+      onSurfaceVariant: AppPalette.darkPastelOnSurfaceMuted,
+      outline: AppPalette.darkPastelBorder,
     ),
+    scaffoldBackgroundColor: AppPalette.darkPastelBackground,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,
