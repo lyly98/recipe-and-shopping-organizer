@@ -6,7 +6,9 @@ import 'package:flutter_riverpod_clean_architecture/core/router/locale_aware_rou
 import 'package:flutter_riverpod_clean_architecture/examples/localization_assets_demo.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/screens/register_screen.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/category_recipes_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/home_screen.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/recipe_detail_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/settings/presentation/screens/language_settings_screen.dart';
@@ -56,6 +58,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppConstants.homeRoute,
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+
+      // Category recipes: /category?name=Plats
+      GoRoute(
+        path: AppConstants.categoryRoute,
+        name: 'category',
+        builder: (context, state) {
+          final name = state.uri.queryParameters['name'] ?? '';
+          return CategoryRecipesScreen(categoryName: name);
+        },
+      ),
+
+      // Recipe detail: /recipe?id=xxx
+      GoRoute(
+        path: AppConstants.recipeRoute,
+        name: 'recipe',
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'] ?? '';
+          return RecipeDetailScreen(recipeId: id);
+        },
       ),
 
       // Login route

@@ -1,9 +1,11 @@
 class AppConstants {
   // API constants
-  // For iOS Simulator: use localhost
-  // For Android Emulator: use 10.0.2.2
-  // For Physical Device: use your computer's IP address
-  static const String apiBaseUrl = 'http://localhost:8000';
+  // Host is set via --dart-define=API_HOST=... when running on device/emulator.
+  // - iOS Simulator: default localhost works
+  // - Android Emulator: run with --dart-define=API_HOST=10.0.2.2
+  // - Physical Android: run with --dart-define=API_HOST=YOUR_MAC_IP (e.g. 192.168.1.10)
+  static String get apiBaseUrl =>
+      'http://${const String.fromEnvironment('API_HOST', defaultValue: 'localhost')}:8000';
 
   // Storage constants
   static const String tokenKey = 'authToken';
@@ -26,6 +28,8 @@ class AppConstants {
   static const String homeRoute = '/home';
   static const String chatRoute = '/chat';
   static const String surveyRoute = '/survey';
+  static const String categoryRoute = '/category';
+  static const String recipeRoute = '/recipe';
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';
   static const String profileRoute = '/profile';

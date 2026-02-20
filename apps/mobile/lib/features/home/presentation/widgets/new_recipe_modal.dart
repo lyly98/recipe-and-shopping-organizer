@@ -1,0 +1,335 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/recipes_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+
+/// Modal to create a new recipe. Figma: Recipe Creation Form – Titre, Catégorie, Ingrédients, Préparation.
+class NewRecipeModal extends StatefulWidget {
+  const NewRecipeModal({
+    super.key,
+    required this.isDark,
+    required this.onSave,
+  });
+
+  final bool isDark;
+  final void Function(RecipeItem recipe) onSave;
+
+  /// Shows the modal and returns when dismissed.
+  static Future<void> show(
+    BuildContext context, {
+    required bool isDark,
+    required void Function(RecipeItem recipe) onSave,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NewRecipeModal(isDark: isDark, onSave: onSave),
+    );
+  }
+
+  @override
+  State<NewRecipeModal> createState() => _NewRecipeModalState();
+}
+
+class _NewRecipeModalState extends State<NewRecipeModal> {
+  final _titreController = TextEditingController();
+  final _motCleController = TextEditingController();
+  final _ingredientsControllers = <TextEditingController>[TextEditingController()];
+  final _stepsControllers = <TextEditingController>[TextEditingController()];
+
+  String? _selectedCategory;
+  String? _imagePath;
+  final _picker = ImagePicker();
+
+  static const List<String> _categories = [
+    'Plats', 'Pains', 'Desserts', 'Jus', 'Snacks', 'Soupes',
+  ];
+
+  @override
+  void dispose() {
+    _titreController.dispose();
+    _motCleController.dispose();
+    for (final c in _ingredientsControllers) {
+      c.dispose();
+    }
+    for (final c in _stepsControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addIngredient() {
+    setState(() {
+      _ingredientsControllers.add(TextEditingController());
+    });
+  }
+
+  void _addStep() {
+    setState(() {
+      _stepsControllers.add(TextEditingController());
+    });
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final xFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (xFile == null || !mounted) return;
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        final name = 'recipe_${DateTime.now().millisecondsSinceEpoch}${p.extension(xFile.path)}';
+        final dest = File(p.join(dir.path, name));
+        await File(xFile.path).copy(dest.path);
+        if (mounted) setState(() => _imagePath = dest.path);
+      } catch (_) {
+        if (mounted) setState(() => _imagePath = xFile.path);
+      }
+    } catch (e) {
+      // MissingPluginException after hot reload: do a full restart (stop app and run again)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Impossible d\'ouvrir la galerie. Redémarrez l\'app (pas de hot reload).',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _submit() {
+    final titre = _titreController.text.trim();
+    if (titre.isEmpty) return;
+    final category = _selectedCategory ?? _categories.first;
+    final ingredients = _ingredientsControllers
+        .map((c) => c.text.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final steps = _stepsControllers
+        .map((c) => c.text.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final recipe = createRecipe(
+      title: titre,
+      category: category,
+      imagePath: _imagePath,
+      motCle: _motCleController.text.trim().isEmpty ? null : _motCleController.text.trim(),
+      ingredients: ingredients.isEmpty ? null : ingredients,
+      steps: steps.isEmpty ? null : steps,
+    );
+    widget.onSave(recipe);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final orange = isDark ? AppPalette.darkPastelPrimaryOrange : AppPalette.primaryOrange;
+    final pink = isDark ? AppPalette.darkPastelPrimaryPink : AppPalette.primaryPink;
+    final surface = isDark ? AppPalette.darkPastelSurfaceElevated : AppPalette.white;
+    final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Text(
+                  'Nouvelle recette',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    color: AppPalette.white,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildLabel('Image'),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppPalette.darkPastelSurface : AppPalette.lightGray.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isDark ? AppPalette.darkPastelBorder : AppPalette.mediumGray.withValues(alpha: 0.5)),
+                          ),
+                          child: _imagePath != null && File(_imagePath!).existsSync()
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.file(File(_imagePath!), fit: BoxFit.cover, width: double.infinity),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_photo_alternate_outlined, size: 40, color: onBg.withValues(alpha: 0.5)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Ajouter une image',
+                                      style: TextStyle(fontSize: 13, color: onBg.withValues(alpha: 0.7)),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('Titre'),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _titreController,
+                        decoration: _inputDecoration(context, isDark, 'Ex. Tarte aux pommes'),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('Catégorie'),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        value: _selectedCategory,
+                        decoration: _inputDecoration(context, isDark, null),
+                        items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                        onChanged: (v) => setState(() => _selectedCategory = v),
+                        hint: const Text('Choisir une catégorie'),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('Mot-clé pour l\'usage'),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _motCleController,
+                        maxLines: 2,
+                        decoration: _inputDecoration(context, isDark, 'Ex. Apéritif, Brunch...'),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildLabel('Ingrédients'),
+                      const SizedBox(height: 8),
+                      ...List.generate(_ingredientsControllers.length, (i) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextField(
+                            controller: _ingredientsControllers[i],
+                            decoration: _inputDecoration(
+                              context,
+                              isDark,
+                              'Ingrédient ${i + 1}',
+                            ),
+                          ),
+                        );
+                      }),
+                      TextButton.icon(
+                        onPressed: _addIngredient,
+                        icon: Icon(Icons.add, size: 20, color: orange),
+                        label: Text('Ajouter', style: TextStyle(color: orange, fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildLabel('Préparation'),
+                      const SizedBox(height: 8),
+                      ...List.generate(_stepsControllers.length, (i) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextField(
+                            controller: _stepsControllers[i],
+                            maxLines: 2,
+                            decoration: _inputDecoration(
+                              context,
+                              isDark,
+                              'Étape ${i + 1}',
+                            ),
+                          ),
+                        );
+                      }),
+                      TextButton.icon(
+                        onPressed: _addStep,
+                        icon: Icon(Icons.add, size: 20, color: orange),
+                        label: Text('Ajouter', style: TextStyle(color: orange, fontWeight: FontWeight.w600)),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // TODO: Corriger l'orthographe
+                            },
+                            icon: Icon(Icons.spellcheck, color: pink),
+                            tooltip: 'Corriger l\'orthographe',
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text('Annuler'),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: orange,
+                              foregroundColor: AppPalette.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Enregistrer'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    final isDark = widget.isDark;
+    final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
+    return Text(
+      text,
+      style: TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+        color: onBg,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(BuildContext context, bool isDark, String? hint) {
+    return InputDecoration(
+      hintText: hint,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      filled: true,
+      fillColor: isDark ? AppPalette.darkPastelSurface : AppPalette.lightGray.withValues(alpha: 0.5),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+  }
+}
