@@ -10,7 +10,24 @@ import 'package:go_router/go_router.dart';
 class CategoryManagementScreen extends ConsumerWidget {
   const CategoryManagementScreen({super.key});
 
-  static const _defaultEmojis = ['🍽️', '🍞', '🍰', '🥤', '🍿', '🍲', '🥗', '☕', '📁'];
+  static const _defaultEmojis = [
+    // Repas & plats
+    '🍽️', '🍲', '🥘', '🍛', '🍜', '🍝', '🥗', '🫕',
+    // Boulangerie & petit-déj
+    '🍞', '🥐', '🥖', '🧇', '🥞', '🍳',
+    // Desserts & snacks
+    '🍰', '🎂', '🍮', '🍩', '🍪', '🍫', '🍿', '🧁',
+    // Fruits & légumes
+    '🥦', '🥕', '🍅', '🫑', '🧅', '🧄', '🥑', '🍋',
+    // Viandes & poissons
+    '🥩', '🍗', '🍖', '🦐', '🐟', '🦞',
+    // Boissons
+    '☕', '🍵', '🥤', '🧃', '🍹', '🍷', '🧋',
+    // Cuisine du monde
+    '🌮', '🌯', '🍕', '🍔', '🥪', '🥙', '🫔',
+    // Divers
+    '🧑‍🍳', '📁', '⭐', '❤️', '🌿', '🫙',
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

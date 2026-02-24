@@ -155,6 +155,66 @@ class RecipeRepositoryImpl implements RecipeRepository {
   }
 
   @override
+  Future<Either<Failure, RecipeEntity>> updateRecipeFull(
+    String id, {
+    required String title,
+    String? categoryId,
+    String? mealUsage,
+    List<String>? imageUrls,
+    required List<Map<String, dynamic>> ingredients,
+    required List<Map<String, dynamic>> preparationSteps,
+  }) async {
+    try {
+      final effectiveCategoryId =
+          (categoryId != null && categoryId.trim().isNotEmpty) ? categoryId : null;
+
+      final ingredientsList = <Map<String, dynamic>>[];
+      for (var i = 0; i < ingredients.length; i++) {
+        final m = ingredients[i];
+        final name = (m['name'] as String?)?.trim() ?? '';
+        if (name.isEmpty) continue;
+        final q = (m['quantity'] as String?)?.trim();
+        ingredientsList.add({
+          'name': name,
+          'quantity': (q != null && q.isNotEmpty) ? q : '1',
+          'unit': m['unit'] as String?,
+          'display_order': i,
+        });
+      }
+
+      final stepsList = <Map<String, dynamic>>[];
+      for (var i = 0; i < preparationSteps.length; i++) {
+        final m = preparationSteps[i];
+        final instruction = (m['instruction'] as String?)?.trim() ?? '';
+        if (instruction.isEmpty) continue;
+        stepsList.add({
+          'step_number': i + 1,
+          'instruction': instruction,
+          'duration_minutes': m['duration_minutes'] as int?,
+        });
+      }
+
+      final body = <String, dynamic>{
+        'title': title.trim(),
+        if (mealUsage != null && mealUsage.trim().isNotEmpty) 'meal_usage': mealUsage.trim(),
+        'ingredients': ingredientsList,
+        'preparation_steps': stepsList,
+        if (imageUrls != null && imageUrls.isNotEmpty) 'image_urls': imageUrls,
+      };
+      if (effectiveCategoryId != null) body['category_id'] = effectiveCategoryId;
+
+      final model = await _remote.updateRecipe(id, body);
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on UnauthorizedException catch (e) {
+      return Left(UnauthorizedFailure(message: e.message));
+    } on Exception catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> deleteRecipe(String id) async {
     try {
       await _remote.deleteRecipe(id);

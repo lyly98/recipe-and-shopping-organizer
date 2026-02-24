@@ -7,6 +7,7 @@ import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart'
 import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/recipe_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/categories_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/recipes_provider.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/widgets/new_recipe_modal.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/providers/home_providers.dart';
 import 'package:go_router/go_router.dart';
 
@@ -98,6 +99,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
     final categories = ref.watch(categoriesProvider).value ?? [];
+    final categoryItems = categoriesToItems(categories);
     final categoryName = categoryNameForRecipe(recipe.categoryId, categories);
 
     // Resolve so images load from current API host (fixes localhost on device/emulator)
@@ -124,6 +126,13 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit_outlined, color: onBg),
+            tooltip: 'Modifier la recette',
+            onPressed: () => _openEditModal(context, recipe, isDark, categoryItems),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -238,6 +247,53 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     );
   }
 
+  Future<void> _openEditModal(
+    BuildContext context,
+    RecipeEntity recipe,
+    bool isDark,
+    List<CategoryItem> categoryItems,
+  ) async {
+    bool wasSaved = false;
+
+    await NewRecipeModal.show(
+      context,
+      isDark: isDark,
+      categoryItems: categoryItems,
+      existingRecipe: recipe,
+      uploadImage: (path) async {
+        final repo = ref.read(recipeRepositoryProvider);
+        final result = await repo.uploadRecipeImage(path);
+        return result.fold((_) => null, (url) => url);
+      },
+      onSave: (params) async {
+        final id = params['id'] as String?;
+        if (id == null || id.isEmpty) return 'Identifiant de recette manquant';
+        final err = await ref.read(recipesProvider.notifier).updateRecipeFull(
+              id: id,
+              title: params['title'] as String? ?? '',
+              categoryId: params['categoryId'] as String?,
+              mealUsage: params['mealUsage'] as String?,
+              imageUrls: _toStringList(params['imageUrls']),
+              ingredients: _toMapList(params['ingredients']),
+              preparationSteps: _toMapList(params['preparationSteps']),
+            );
+        if (err != null) return err;
+        wasSaved = true;
+        return null;
+      },
+    );
+
+    // Reload only after the modal is fully dismissed so the freshly-built
+    // detail screen picks up the new state without any overlay interference.
+    if (wasSaved && mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+      await _loadRecipe();
+    }
+  }
+
   Widget _placeholder(bool isDark, Color onBg) {
     return Container(
       color: isDark ? AppPalette.darkPastelBorder : AppPalette.lightGray,
@@ -323,4 +379,20 @@ class _BulletRow extends StatelessWidget {
       ),
     );
   }
+}
+
+List<String>? _toStringList(dynamic v) {
+  if (v == null) return null;
+  if (v is! List || v.isEmpty) return null;
+  return v.map((e) => e.toString()).toList();
+}
+
+List<Map<String, dynamic>> _toMapList(dynamic v) {
+  if (v == null) return [];
+  if (v is! List) return [];
+  return v
+      .map<Map<String, dynamic>>(
+        (e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{},
+      )
+      .toList();
 }

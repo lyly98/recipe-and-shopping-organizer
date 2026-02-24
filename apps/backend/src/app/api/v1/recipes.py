@@ -213,6 +213,7 @@ async def get_recipe(
 
 
 @router.patch("/recipes/{recipe_id}", response_model=RecipeRead)
+@cache(key_prefix="recipe_cache", resource_id_name="recipe_id")
 async def update_recipe(
     request: Request,
     recipe_id: UUID,
@@ -220,30 +221,82 @@ async def update_recipe(
     current_user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
-    """Update a recipe (authenticated, owner only)."""
+    """Update a recipe (authenticated, owner only).
+
+    When ``ingredients`` or ``preparation_steps`` are provided, the existing
+    items are deleted and replaced with the supplied ones.
+    """
     db_recipe = await crud_recipes.get(db=db, id=recipe_id)
     if db_recipe is None:
         raise NotFoundException("Recipe not found")
-    
+
     # Check ownership
-    if str(db_recipe["user_id"]) != current_user["uuid"]:
+    if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only update your own recipes")
-    
-    # Add updated_at timestamp
-    values_dict = values.model_dump(exclude_unset=True)
+
+    # Extract nested lists before building the internal update object
+    ingredients_data = values.ingredients
+    preparation_steps_data = values.preparation_steps
+
+    # Build a flat, ORM-safe update object (no nested ingredients/steps fields).
+    values_dict = values.model_dump(exclude_unset=True, exclude={"ingredients", "preparation_steps"})
     values_internal = RecipeUpdateInternal(**values_dict, updated_at=datetime.now(UTC))
-    
-    updated_recipe = await crud_recipes.update(
+
+    # fastcrud's update() returns None in this version; fetch the record separately.
+    await crud_recipes.update(db=db, object=values_internal, id=recipe_id)
+    updated_recipe = await crud_recipes.get(db=db, id=recipe_id, schema_to_select=RecipeRead)
+    if updated_recipe is None:
+        raise NotFoundException("Recipe not found after update")
+
+    # Replace ingredients when provided
+    if ingredients_data is not None:
+        from ...schemas.ingredient import IngredientCreateInternal
+        existing_ingredients = await crud_ingredients.get_multi(
+            db=db,
+            recipe_id=recipe_id,
+            schema_to_select=IngredientRead,
+        )
+        for ing in existing_ingredients.get("data", []):
+            await crud_ingredients.delete(db=db, id=ing["id"])
+        for ingredient in ingredients_data:
+            ing_dict = ingredient.model_dump()
+            ing_dict["recipe_id"] = recipe_id
+            await crud_ingredients.create(db=db, object=IngredientCreateInternal(**ing_dict))
+
+    # Replace preparation steps when provided
+    if preparation_steps_data is not None:
+        from ...schemas.preparation_step import PreparationStepCreateInternal
+        existing_steps = await crud_preparation_steps.get_multi(
+            db=db,
+            recipe_id=recipe_id,
+            schema_to_select=PreparationStepRead,
+        )
+        for step in existing_steps.get("data", []):
+            await crud_preparation_steps.delete(db=db, id=step["id"])
+        for step in preparation_steps_data:
+            step_dict = step.model_dump()
+            step_dict["recipe_id"] = recipe_id
+            await crud_preparation_steps.create(db=db, object=PreparationStepCreateInternal(**step_dict))
+
+    # Attach the final nested lists to the response
+    ingredients_list = await crud_ingredients.get_multi(
         db=db,
-        object=values_internal,
-        id=recipe_id,
-        schema_to_select=RecipeRead,
+        recipe_id=recipe_id,
+        schema_to_select=IngredientRead,
     )
-    
+    steps_list = await crud_preparation_steps.get_multi(
+        db=db,
+        recipe_id=recipe_id,
+        schema_to_select=PreparationStepRead,
+    )
+    updated_recipe["ingredients"] = ingredients_list.get("data", [])
+    updated_recipe["preparation_steps"] = steps_list.get("data", [])
+
     return updated_recipe
 
 
 @router.delete("/recipes/{recipe_id}", status_code=204)
+@cache(key_prefix="recipe_cache", resource_id_name="recipe_id")
 async def delete_recipe(
     request: Request,
     recipe_id: UUID,
@@ -259,13 +312,14 @@ async def delete_recipe(
         raise NotFoundException("Recipe not found")
     
     # Check ownership
-    if str(db_recipe["user_id"]) != current_user["uuid"]:
+    if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only delete your own recipes")
     
     await crud_recipes.delete(db=db, id=recipe_id)
 
 
 @router.post("/recipes/{recipe_id}/favorite", response_model=RecipeRead)
+@cache(key_prefix="recipe_cache", resource_id_name="recipe_id")
 async def toggle_favorite(
     request: Request,
     recipe_id: UUID,
@@ -278,7 +332,7 @@ async def toggle_favorite(
         raise NotFoundException("Recipe not found")
     
     # Check ownership
-    if str(db_recipe["user_id"]) != current_user["uuid"]:
+    if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only favorite your own recipes")
     
     # Toggle favorite

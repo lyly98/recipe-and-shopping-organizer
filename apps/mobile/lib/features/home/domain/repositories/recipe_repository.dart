@@ -30,7 +30,7 @@ abstract class RecipeRepository {
     required List<Map<String, dynamic>> preparationSteps,
   });
 
-  /// Update a recipe (authenticated).
+  /// Update a recipe's metadata (authenticated).
   Future<Either<Failure, RecipeEntity>> updateRecipe(
     String id, {
     String? title,
@@ -43,6 +43,17 @@ abstract class RecipeRepository {
     List<String>? tags,
     bool? isFavorite,
     bool? isPublic,
+  });
+
+  /// Full update: replaces recipe metadata, ingredients, and preparation steps (authenticated).
+  Future<Either<Failure, RecipeEntity>> updateRecipeFull(
+    String id, {
+    required String title,
+    String? categoryId,
+    String? mealUsage,
+    List<String>? imageUrls,
+    required List<Map<String, dynamic>> ingredients,
+    required List<Map<String, dynamic>> preparationSteps,
   });
 
   /// Delete a recipe (authenticated).

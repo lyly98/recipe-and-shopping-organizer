@@ -57,6 +57,34 @@ class RecipesNotifier extends AsyncNotifier<List<RecipeEntity>> {
     );
   }
 
+  Future<String?> updateRecipeFull({
+    required String id,
+    required String title,
+    String? categoryId,
+    String? mealUsage,
+    List<String>? imageUrls,
+    required List<Map<String, dynamic>> ingredients,
+    required List<Map<String, dynamic>> preparationSteps,
+  }) async {
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.updateRecipeFull(
+      id,
+      title: title,
+      categoryId: categoryId,
+      mealUsage: mealUsage,
+      imageUrls: imageUrls,
+      ingredients: ingredients,
+      preparationSteps: preparationSteps,
+    );
+    return result.fold(
+      (failure) => failure.message,
+      (_) {
+        ref.invalidateSelf();
+        return null;
+      },
+    );
+  }
+
   Future<String?> removeRecipe(String id) async {
     final repo = ref.read(recipeRepositoryProvider);
     final result = await repo.deleteRecipe(id);
