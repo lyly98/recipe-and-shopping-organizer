@@ -2,33 +2,45 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
-import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/recipes_provider.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/categories_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-/// Modal to create a new recipe. Figma: Recipe Creation Form – Titre, Catégorie, Ingrédients, Préparation.
+/// Modal to create a new recipe. Sends create params to [onSave] for API.
 class NewRecipeModal extends StatefulWidget {
   const NewRecipeModal({
     super.key,
     required this.isDark,
     required this.onSave,
+    required this.categoryItems,
+    this.uploadImage,
   });
 
   final bool isDark;
-  final void Function(RecipeItem recipe) onSave;
+  final Future<String?> Function(Map<String, dynamic> params) onSave;
+  final List<CategoryItem> categoryItems;
+  /// If provided, called with the picked image path; returns URL to use in recipe or null on failure.
+  final Future<String?> Function(String filePath)? uploadImage;
 
-  /// Shows the modal and returns when dismissed.
+  /// Shows the modal and returns when dismissed. [onSave] returns null on success or error message.
   static Future<void> show(
     BuildContext context, {
     required bool isDark,
-    required void Function(RecipeItem recipe) onSave,
+    required List<CategoryItem> categoryItems,
+    required Future<String?> Function(Map<String, dynamic> params) onSave,
+    Future<String?> Function(String filePath)? uploadImage,
   }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => NewRecipeModal(isDark: isDark, onSave: onSave),
+      builder: (context) => NewRecipeModal(
+        isDark: isDark,
+        onSave: onSave,
+        categoryItems: categoryItems,
+        uploadImage: uploadImage,
+      ),
     );
   }
 
@@ -42,13 +54,11 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
   final _ingredientsControllers = <TextEditingController>[TextEditingController()];
   final _stepsControllers = <TextEditingController>[TextEditingController()];
 
-  String? _selectedCategory;
+  String? _selectedCategoryId;
   String? _imagePath;
   final _picker = ImagePicker();
 
-  static const List<String> _categories = [
-    'Plats', 'Pains', 'Desserts', 'Jus', 'Snacks', 'Soupes',
-  ];
+  List<CategoryItem> get _categories => widget.categoryItems.isNotEmpty ? widget.categoryItems : [const CategoryItem(id: '', name: 'Plats', emoji: '🍽️')];
 
   @override
   void dispose() {
@@ -89,10 +99,9 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
         if (mounted) setState(() => _imagePath = xFile.path);
       }
     } catch (e) {
-      // MissingPluginException after hot reload: do a full restart (stop app and run again)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text(
               'Impossible d\'ouvrir la galerie. Redémarrez l\'app (pas de hot reload).',
             ),
@@ -102,10 +111,10 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final titre = _titreController.text.trim();
     if (titre.isEmpty) return;
-    final category = _selectedCategory ?? _categories.first;
+    final categoryId = _selectedCategoryId ?? (_categories.isNotEmpty && _categories.first.id.isNotEmpty ? _categories.first.id : null);
     final ingredients = _ingredientsControllers
         .map((c) => c.text.trim())
         .where((s) => s.isNotEmpty)
@@ -114,16 +123,39 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
         .map((c) => c.text.trim())
         .where((s) => s.isNotEmpty)
         .toList();
-    final recipe = createRecipe(
-      title: titre,
-      category: category,
-      imagePath: _imagePath,
-      motCle: _motCleController.text.trim().isEmpty ? null : _motCleController.text.trim(),
-      ingredients: ingredients.isEmpty ? null : ingredients,
-      steps: steps.isEmpty ? null : steps,
-    );
-    widget.onSave(recipe);
+    final ingredientMaps = ingredients.asMap().entries.map((e) => {
+      'name': e.value,
+      'quantity': '1',
+      'unit': null,
+      'display_order': e.key,
+    }).toList();
+    final stepMaps = steps.asMap().entries.map((e) => {
+      'step_number': e.key + 1,
+      'instruction': e.value,
+      'duration_minutes': null,
+    }).toList();
+
+    List<String>? imageUrls;
+    if (_imagePath != null && _imagePath!.trim().isNotEmpty && widget.uploadImage != null) {
+      final url = await widget.uploadImage!(_imagePath!);
+      if (url != null && url.isNotEmpty) imageUrls = [url];
+    }
+
+    final err = await widget.onSave({
+      'title': titre,
+      'categoryId': categoryId,
+      'mealUsage': _motCleController.text.trim().isEmpty ? null : _motCleController.text.trim(),
+      'imageUrls': imageUrls,
+      'ingredients': ingredientMaps,
+      'preparationSteps': stepMaps,
+    });
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
     Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recette enregistrée')));
   }
 
   @override
@@ -210,10 +242,13 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                       _buildLabel('Catégorie'),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        value: _selectedCategoryId,
                         decoration: _inputDecoration(context, isDark, null),
-                        items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                        onChanged: (v) => setState(() => _selectedCategory = v),
+                        items: _categories
+                            .where((c) => c.id.isNotEmpty)
+                            .map((c) => DropdownMenuItem(value: c.id, child: Text('${c.emoji} ${c.name}')))
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedCategoryId = v),
                         hint: const Text('Choisir une catégorie'),
                       ),
                       const SizedBox(height: 16),
@@ -272,20 +307,18 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           IconButton(
-                            onPressed: () {
-                              // TODO: Corriger l'orthographe
-                            },
+                            onPressed: () {},
                             icon: Icon(Icons.spellcheck, color: pink),
                             tooltip: 'Corriger l\'orthographe',
                           ),
                           const Spacer(),
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: Text('Annuler'),
+                            child: const Text('Annuler'),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
-                            onPressed: _submit,
+                            onPressed: () => _submit(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: orange,
                               foregroundColor: AppPalette.white,

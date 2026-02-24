@@ -45,6 +45,7 @@ async def create_category(
 @cache(
     key_prefix="categories:page_{page}:items_per_page:{items_per_page}",
     expiration=300,  # 5 minutes cache
+    list_endpoint=True,
 )
 async def get_categories(
     request: Request,

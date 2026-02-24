@@ -8,6 +8,7 @@ import 'package:flutter_riverpod_clean_architecture/core/providers/storage_provi
 import 'package:flutter_riverpod_clean_architecture/core/router/app_router.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_theme.dart';
 import 'package:flutter_riverpod_clean_architecture/core/updates/update_providers.dart';
+import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/l10n/app_localizations_delegate.dart';
 import 'package:flutter_riverpod_clean_architecture/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +32,7 @@ void main() async {
           (ref) => ref.watch(persistentLocaleProvider),
         ),
       ],
-      child: const MyApp(),
+      child: const AuthBootstrap(child: MyApp()),
     ),
   );
 }
@@ -48,6 +49,31 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );
+
+/// Runs checkAuthStatus once on startup to restore token and user.
+class AuthBootstrap extends ConsumerStatefulWidget {
+  const AuthBootstrap({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<AuthBootstrap> createState() => _AuthBootstrapState();
+}
+
+class _AuthBootstrapState extends ConsumerState<AuthBootstrap> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).checkAuthStatus();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});

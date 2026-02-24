@@ -25,6 +25,7 @@ class CorsDevMiddleware(BaseHTTPMiddleware):
                 status_code=200,
                 headers={
                     "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Credentials": "true",
                     "Access-Control-Allow-Methods": self.ALLOW_METHODS,
                     "Access-Control-Allow-Headers": self.ALLOW_HEADERS,
                     "Access-Control-Max-Age": "86400",
@@ -33,9 +34,11 @@ class CorsDevMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        if is_localhost and "access-control-allow-origin" not in {
-            k.lower() for k in response.headers.keys()
-        }:
+        # For localhost origins, always echo back the request origin so credentials
+        # (e.g. Authorization header) work. Browsers reject "*" when credentials are sent.
+        if is_localhost and origin:
             response.headers["Access-Control-Allow-Origin"] = origin
+            if "Access-Control-Allow-Credentials" not in response.headers:
+                response.headers["Access-Control-Allow-Credentials"] = "true"
 
         return response

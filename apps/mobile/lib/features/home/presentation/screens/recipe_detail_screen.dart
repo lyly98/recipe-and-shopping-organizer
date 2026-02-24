@@ -2,12 +2,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/recipe_entity.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/categories_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/recipes_provider.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/providers/home_providers.dart';
 import 'package:go_router/go_router.dart';
 
 /// Screen showing a single recipe: image, title, category, ingredients, steps.
-class RecipeDetailScreen extends ConsumerWidget {
+class RecipeDetailScreen extends ConsumerStatefulWidget {
   const RecipeDetailScreen({
     super.key,
     required this.recipeId,
@@ -16,12 +20,41 @@ class RecipeDetailScreen extends ConsumerWidget {
   final String recipeId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final recipes = ref.watch(recipesProvider);
-    final matching = recipes.where((r) => r.id == recipeId).toList();
-    final recipe = matching.isEmpty ? null : matching.first;
+  ConsumerState<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
 
-    if (recipe == null) {
+class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
+  RecipeEntity? _recipe;
+  String? _error;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipe();
+  }
+
+  Future<void> _loadRecipe() async {
+    // Always fetch full recipe by ID so we get ingredients, preparation_steps, and image_urls
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.getRecipe(widget.recipeId);
+    result.fold(
+      (failure) => setState(() {
+        _error = failure.message;
+        _loading = false;
+        _recipe = null;
+      }),
+      (entity) => setState(() {
+        _recipe = entity;
+        _error = null;
+        _loading = false;
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
       return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -30,12 +63,49 @@ class RecipeDetailScreen extends ConsumerWidget {
           ),
           title: const Text('Recette'),
         ),
-        body: const Center(child: Text('Recette introuvable')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null || _recipe == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text('Recette'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_error ?? 'Recette introuvable'),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  setState(() => _loading = true);
+                  _loadRecipe();
+                },
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
+    final recipe = _recipe!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
+    final categories = ref.watch(categoriesProvider).value ?? [];
+    final categoryName = categoryNameForRecipe(recipe.categoryId, categories);
+
+    // Resolve so images load from current API host (fixes localhost on device/emulator)
+    final rawImageUrl = recipe.imageUrls != null && recipe.imageUrls!.isNotEmpty
+        ? recipe.imageUrls!.first
+        : null;
+    final imageUrl = AppConstants.resolveRecipeImageUrl(rawImageUrl) ?? rawImageUrl;
+    final isLocalFile = imageUrl != null && (imageUrl.startsWith('/') || !imageUrl.startsWith('http'));
 
     return Scaffold(
       backgroundColor: isDark ? AppPalette.darkPastelBackground : AppPalette.cream,
@@ -59,56 +129,63 @@ class RecipeDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Image
-            if (recipe.imagePath != null && File(recipe.imagePath!).existsSync())
+            if (isLocalFile && File(imageUrl).existsSync())
               AspectRatio(
                 aspectRatio: 16 / 9,
                 child: Image.file(
-                  File(recipe.imagePath!),
+                  File(imageUrl),
                   fit: BoxFit.cover,
                   width: double.infinity,
+                ),
+              )
+            else if (imageUrl != null && imageUrl.startsWith('http'))
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (_, __, ___) => _placeholder(isDark, onBg),
                 ),
               )
             else
               AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Container(
-                  color: isDark ? AppPalette.darkPastelBorder : AppPalette.lightGray,
-                  child: Icon(
-                    Icons.restaurant,
-                    size: 64,
-                    color: onBg.withValues(alpha: 0.5),
-                  ),
-                ),
+                child: _placeholder(isDark, onBg),
               ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category & mot-clé
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _Chip(label: recipe.category, isDark: isDark),
-                      if (recipe.motCle != null && recipe.motCle!.isNotEmpty)
-                        _Chip(label: recipe.motCle!, isDark: isDark),
+                      if (categoryName != null && categoryName.isNotEmpty)
+                        _Chip(label: categoryName, isDark: isDark),
+                      if (recipe.mealUsage != null && recipe.mealUsage!.isNotEmpty)
+                        _Chip(label: recipe.mealUsage!, isDark: isDark),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  // Ingrédients
-                  if (recipe.ingredients != null && recipe.ingredients!.isNotEmpty) ...[
+                  if (recipe.ingredients.isNotEmpty) ...[
                     _SectionTitle(title: 'Ingrédients', isDark: isDark),
                     const SizedBox(height: 8),
-                    ...recipe.ingredients!.map((s) => _BulletRow(text: s, isDark: isDark)),
+                    ...recipe.ingredients.map(
+                      (i) => _BulletRow(
+                        text: i.unit != null && i.unit!.isNotEmpty
+                            ? '${i.quantity} ${i.unit} ${i.name}'
+                            : '${i.quantity} ${i.name}',
+                        isDark: isDark,
+                      ),
+                    ),
                     const SizedBox(height: 24),
                   ],
-                  // Préparation
-                  if (recipe.steps != null && recipe.steps!.isNotEmpty) ...[
+                  if (recipe.preparationSteps.isNotEmpty) ...[
                     _SectionTitle(title: 'Préparation', isDark: isDark),
                     const SizedBox(height: 8),
-                    ...recipe.steps!.asMap().entries.map((e) {
+                    ...recipe.preparationSteps.asMap().entries.map((e) {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Row(
@@ -123,7 +200,7 @@ class RecipeDetailScreen extends ConsumerWidget {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                '${e.key + 1}',
+                                '${e.value.stepNumber}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,
@@ -134,7 +211,7 @@ class RecipeDetailScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                e.value,
+                                e.value.instruction,
                                 style: TextStyle(
                                   fontSize: 15,
                                   height: 1.4,
@@ -147,8 +224,7 @@ class RecipeDetailScreen extends ConsumerWidget {
                       );
                     }),
                   ],
-                  if ((recipe.ingredients == null || recipe.ingredients!.isEmpty) &&
-                      (recipe.steps == null || recipe.steps!.isEmpty))
+                  if (recipe.ingredients.isEmpty && recipe.preparationSteps.isEmpty)
                     Text(
                       'Aucun ingrédient ni étape renseignés.',
                       style: TextStyle(color: onBg.withValues(alpha: 0.7), fontSize: 15),
@@ -158,6 +234,17 @@ class RecipeDetailScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _placeholder(bool isDark, Color onBg) {
+    return Container(
+      color: isDark ? AppPalette.darkPastelBorder : AppPalette.lightGray,
+      child: Icon(
+        Icons.restaurant,
+        size: 64,
+        color: onBg.withValues(alpha: 0.5),
       ),
     );
   }

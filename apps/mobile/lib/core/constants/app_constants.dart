@@ -7,6 +7,23 @@ class AppConstants {
   static String get apiBaseUrl =>
       'http://${const String.fromEnvironment('API_HOST', defaultValue: 'localhost')}:8000';
 
+  /// Resolves a recipe image URL so it uses the current API host (works on device/emulator).
+  /// Pass a stored URL (e.g. http://localhost:8000/static/uploads/...) or a path (/static/uploads/...).
+  static String? resolveRecipeImageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    final base = apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      try {
+        final uri = Uri.parse(url);
+        return '$base${uri.path}${uri.query.isNotEmpty ? '?${uri.query}' : ''}';
+      } catch (_) {
+        return url;
+      }
+    }
+    if (url.startsWith('/')) return base + url;
+    return url;
+  }
+
   // Storage constants
   static const String tokenKey = 'authToken';
   static const String userDataKey = 'userData';
@@ -29,6 +46,7 @@ class AppConstants {
   static const String chatRoute = '/chat';
   static const String surveyRoute = '/survey';
   static const String categoryRoute = '/category';
+  static const String categoriesManagementRoute = '/categories';
   static const String recipeRoute = '/recipe';
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';

@@ -1,83 +1,118 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/category_entity.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/recipe_entity.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/providers/home_providers.dart';
 
-/// Simple recipe model for in-memory storage (until backend exists).
-class RecipeItem {
-  const RecipeItem({
-    required this.id,
-    required this.title,
-    required this.category,
-    this.imagePath,
-    this.motCle,
-    this.ingredients,
-    this.steps,
-  });
+class RecipesNotifier extends AsyncNotifier<List<RecipeEntity>> {
+  @override
+  Future<List<RecipeEntity>> build() async {
+    return _load();
+  }
 
-  final String id;
-  final String title;
-  final String category;
-  final String? imagePath;
-  final String? motCle;
-  final List<String>? ingredients;
-  final List<String>? steps;
+  Future<List<RecipeEntity>> _load() async {
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.getMyRecipes(page: 1, itemsPerPage: 100);
+    return result.fold(
+      (failure) => throw Exception(failure.message),
+      (list) => list,
+    );
+  }
 
-  RecipeItem copyWith({
-    String? id,
-    String? title,
-    String? category,
-    String? imagePath,
-    String? motCle,
-    List<String>? ingredients,
-    List<String>? steps,
-  }) {
-    return RecipeItem(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      category: category ?? this.category,
-      imagePath: imagePath ?? this.imagePath,
-      motCle: motCle ?? this.motCle,
-      ingredients: ingredients ?? this.ingredients,
-      steps: steps ?? this.steps,
+  Future<void> load() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(_load);
+  }
+
+  Future<String?> addRecipe({
+    required String title,
+    String? categoryId,
+    String? mealUsage,
+    int prepTimeMinutes = 0,
+    int cookTimeMinutes = 0,
+    int servings = 1,
+    List<String>? imageUrls,
+    List<String>? tags,
+    required List<Map<String, dynamic>> ingredients,
+    required List<Map<String, dynamic>> preparationSteps,
+  }) async {
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.createRecipe(
+      title: title,
+      categoryId: categoryId,
+      mealUsage: mealUsage,
+      prepTimeMinutes: prepTimeMinutes,
+      cookTimeMinutes: cookTimeMinutes,
+      servings: servings,
+      imageUrls: imageUrls,
+      tags: tags,
+      ingredients: ingredients,
+      preparationSteps: preparationSteps,
+    );
+    return result.fold(
+      (failure) => failure.message,
+      (_) {
+        ref.invalidateSelf();
+        return null;
+      },
+    );
+  }
+
+  Future<String?> removeRecipe(String id) async {
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.deleteRecipe(id);
+    return result.fold(
+      (failure) => failure.message,
+      (_) {
+        ref.invalidateSelf();
+        return null;
+      },
+    );
+  }
+
+  /// Reassign all recipes in category [fromCategoryId] to [toCategoryId].
+  Future<String?> reassignCategory(String fromCategoryId, String toCategoryId) async {
+    if (fromCategoryId == toCategoryId) return null;
+    final value = state.value;
+    if (value == null) return null;
+    final repo = ref.read(recipeRepositoryProvider);
+    final toUpdate = value.where((r) => r.categoryId == fromCategoryId).toList();
+    for (final recipe in toUpdate) {
+      final result = await repo.updateRecipe(recipe.id, categoryId: toCategoryId);
+      if (result.isLeft()) return result.fold((f) => f.message, (_) => null);
+    }
+    ref.invalidateSelf();
+    return null;
+  }
+
+  Future<String?> toggleFavorite(String id) async {
+    final repo = ref.read(recipeRepositoryProvider);
+    final result = await repo.toggleFavorite(id);
+    return result.fold(
+      (failure) => failure.message,
+      (_) {
+        ref.invalidateSelf();
+        return null;
+      },
     );
   }
 }
 
-class RecipesNotifier extends Notifier<List<RecipeItem>> {
-  @override
-  List<RecipeItem> build() => [];
+final recipesProvider =
+    AsyncNotifierProvider<RecipesNotifier, List<RecipeEntity>>(
+  RecipesNotifier.new,
+);
 
-  void addRecipe(RecipeItem recipe) {
-    state = [...state, recipe];
-  }
-
-  void removeRecipe(String id) {
-    state = state.where((r) => r.id != id).toList();
-  }
+/// Count of recipes per category (by category id).
+int recipeCountForCategory(List<RecipeEntity> recipes, String categoryId) {
+  return recipes.where((r) => r.categoryId == categoryId).length;
 }
 
-final recipesProvider = NotifierProvider<RecipesNotifier, List<RecipeItem>>(RecipesNotifier.new);
-
-/// Count of recipes per category.
-int recipeCountForCategory(List<RecipeItem> recipes, String category) {
-  return recipes.where((r) => r.category == category).length;
-}
-
-/// Create a new recipe with a generated id.
-RecipeItem createRecipe({
-  required String title,
-  required String category,
-  String? imagePath,
-  String? motCle,
-  List<String>? ingredients,
-  List<String>? steps,
-}) {
-  return RecipeItem(
-    id: const Uuid().v4(),
-    title: title,
-    category: category,
-    imagePath: imagePath,
-    motCle: motCle,
-    ingredients: ingredients,
-    steps: steps,
-  );
+/// Find category name from categories list for a recipe's categoryId.
+String? categoryNameForRecipe(String? categoryId, List<CategoryEntity> categories) {
+  if (categoryId == null || categoryId.isEmpty) return null;
+  try {
+    return categories.firstWhere((c) => c.id == categoryId).name;
+  } catch (_) {
+    return null;
+  }
 }

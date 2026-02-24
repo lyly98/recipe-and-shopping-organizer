@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
+import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
 
@@ -48,136 +49,197 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch auth state
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppPalette.darkPastelBackground : AppPalette.cream;
+    final surface = isDark ? AppPalette.darkPastelSurface : AppPalette.white;
+    final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
+    final onMuted = isDark ? AppPalette.darkPastelOnSurfaceMuted : AppPalette.mediumGray;
+    final primary = isDark ? AppPalette.darkPastelPrimaryOrange : AppPalette.primaryOrange;
+    final secondary = isDark ? AppPalette.darkPastelPrimaryPink : AppPalette.primaryPink;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.flutter_dash, size: 100, color: Colors.blue),
-                  const SizedBox(height: 32),
-                  const Text(
-                    'Welcome Back!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sign in to your account',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+      backgroundColor: bg,
+      appBar: AppBar(
+        title: Text(
+          'Connexion',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: onBg,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: onBg),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppPalette.darkPastelTerracotta.withValues(alpha: 0.3) : AppPalette.categoryPlats,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.restaurant_rounded,
+                      size: 56,
+                      color: primary,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!AppUtils.isValidEmail(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Bienvenue',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: onBg,
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Connectez-vous pour gérer vos recettes et votre planning',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: onMuted,
+                    height: 1.35,
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // Implement forgot password
-                      },
-                      child: const Text('Forgot Password?'),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: authState.isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    child: authState.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Log In'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account?",
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.go(AppConstants.registerRoute);
-                        },
-                        child: const Text('Register'),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: surface,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: isDark ? null : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ],
-              ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: TextStyle(color: onBg),
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'votre@email.com',
+                          prefixIcon: Icon(Icons.email_outlined, color: onMuted, size: 22),
+                          filled: true,
+                          fillColor: isDark ? AppPalette.darkPastelBackground : AppPalette.lightGray,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          labelStyle: TextStyle(color: onMuted),
+                          hintStyle: TextStyle(color: onMuted.withValues(alpha: 0.7)),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Veuillez entrer votre email';
+                          }
+                          if (!AppUtils.isValidEmail(value)) {
+                            return 'Email invalide';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        style: TextStyle(color: onBg),
+                        decoration: InputDecoration(
+                          labelText: 'Mot de passe',
+                          hintText: '••••••••',
+                          prefixIcon: Icon(Icons.lock_outline_rounded, color: onMuted, size: 22),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              color: onMuted,
+                              size: 22,
+                            ),
+                            onPressed: () {
+                              setState(() => _isPasswordVisible = !_isPasswordVisible);
+                            },
+                          ),
+                          filled: true,
+                          fillColor: isDark ? AppPalette.darkPastelBackground : AppPalette.lightGray,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          labelStyle: TextStyle(color: onMuted),
+                          hintStyle: TextStyle(color: onMuted.withValues(alpha: 0.7)),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Veuillez entrer votre mot de passe';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: authState.isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          foregroundColor: AppPalette.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: authState.isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Se connecter'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Pas encore de compte ? ',
+                      style: TextStyle(fontSize: 15, color: onMuted),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go(AppConstants.registerRoute),
+                      style: TextButton.styleFrom(
+                        foregroundColor: secondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      child: const Text('S\'inscrire'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

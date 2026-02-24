@@ -14,6 +14,8 @@ from ...core.utils.cache import cache
 from ...crud.crud_ingredients import crud_ingredients
 from ...crud.crud_preparation_steps import crud_preparation_steps
 from ...crud.crud_recipes import crud_recipes
+from ...schemas.ingredient import IngredientRead
+from ...schemas.preparation_step import PreparationStepRead
 from ...schemas.recipe import RecipeCreate, RecipeCreateInternal, RecipeRead, RecipeUpdate, RecipeUpdateInternal
 
 router = APIRouter(tags=["recipes"])
@@ -84,6 +86,7 @@ async def create_recipe(
 @cache(
     key_prefix="recipes:page_{page}:items_per_page:{items_per_page}:category:{category_id}:favorites:{favorites_only}:public:{public_only}",
     expiration=60,
+    list_endpoint=True,
 )
 async def get_recipes(
     request: Request,
@@ -118,6 +121,7 @@ async def get_recipes(
         db=db,
         offset=compute_offset(page, items_per_page),
         limit=items_per_page,
+        schema_to_select=RecipeRead,
         **filters,
     )
     
@@ -166,29 +170,45 @@ async def get_recipe(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     """Get a specific recipe by ID.
-    
+
     Public recipes are accessible to everyone.
     Private recipes require authentication and ownership.
+    Returns recipe with nested ingredients and preparation_steps.
     """
     recipe = await crud_recipes.get(db=db, id=recipe_id, schema_to_select=RecipeRead)
-    
+
     if recipe is None:
         raise NotFoundException("Recipe not found")
-    
+
     # Check if recipe is public or user has access
     if not recipe["is_public"]:
         # Recipe is private, check authentication
         # Note: This is a simplified check. In a real app, you'd need to get current_user here
         # For now, private recipes are visible only if explicitly requested
         pass
-    
+
+    # Load nested ingredients and preparation steps (not auto-loaded by get)
+    ingredients_list = await crud_ingredients.get_multi(
+        db=db,
+        recipe_id=recipe_id,
+        schema_to_select=IngredientRead,
+    )
+    steps_list = await crud_preparation_steps.get_multi(
+        db=db,
+        recipe_id=recipe_id,
+        schema_to_select=PreparationStepRead,
+    )
+    recipe["ingredients"] = ingredients_list.get("data", [])
+    recipe["preparation_steps"] = steps_list.get("data", [])
+
     # Increment view count
+    recipe["view_count"] = recipe["view_count"] + 1
     await crud_recipes.update(
         db=db,
-        object={"view_count": recipe["view_count"] + 1},
+        object={"view_count": recipe["view_count"]},
         id=recipe_id,
     )
-    
+
     return recipe
 
 

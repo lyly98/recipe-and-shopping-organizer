@@ -190,6 +190,7 @@ def cache(
     resource_id_type: type | tuple[type, ...] = int,
     to_invalidate_extra: dict[str, Any] | None = None,
     pattern_to_invalidate_extra: list[str] | None = None,
+    list_endpoint: bool = False,
 ) -> Callable:
     """Cache decorator for FastAPI endpoints.
 
@@ -291,13 +292,15 @@ def cache(
             if client is None:
                 raise MissingClientError
 
-            if resource_id_name:
+            formatted_key_prefix = _format_prefix(key_prefix, kwargs)
+            if list_endpoint:
+                cache_key = formatted_key_prefix
+            elif resource_id_name:
                 resource_id = kwargs[resource_id_name]
+                cache_key = f"{formatted_key_prefix}:{resource_id}"
             else:
                 resource_id = _infer_resource_id(kwargs=kwargs, resource_id_type=resource_id_type)
-
-            formatted_key_prefix = _format_prefix(key_prefix, kwargs)
-            cache_key = f"{formatted_key_prefix}:{resource_id}"
+                cache_key = f"{formatted_key_prefix}:{resource_id}"
             if request.method == "GET":
                 if to_invalidate_extra is not None or pattern_to_invalidate_extra is not None:
                     raise InvalidRequestError

@@ -31,10 +31,33 @@ class ApiClient {
     }
   }
 
+  /// POST multipart/form-data with a file. Used for image upload.
+  Future<Either<Failure, dynamic>> postMultipart(String path, {required String filePath}) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      final response = await _dio.post(path, data: formData);
+      return Right(response.data);
+    } on DioException catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
   // PUT request
   Future<Either<Failure, dynamic>> put(String path, {dynamic data}) async {
     try {
       final response = await _dio.put(path, data: data);
+      return Right(response.data);
+    } on DioException catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  // PATCH request
+  Future<Either<Failure, dynamic>> patch(String path, {dynamic data}) async {
+    try {
+      final response = await _dio.patch(path, data: data);
       return Right(response.data);
     } on DioException catch (e) {
       return Left(_handleError(e));
