@@ -32,7 +32,7 @@ class RecipesTabScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Mes Recettes',
+                  'Prêt à mijoter!',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: onBg,

@@ -104,9 +104,21 @@ class CategoryManagementScreen extends ConsumerWidget {
                           ),
                         )
                       : null,
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
-                    onPressed: () => _confirmDelete(context, ref, cat, count, isDark, categories),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: isDark ? AppPalette.darkPastelPrimaryBlue : AppPalette.primaryBlue,
+                        ),
+                        onPressed: () => _showEditCategoryDialog(context, ref, cat, isDark, surface, onBg, onMuted),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.error),
+                        onPressed: () => _confirmDelete(context, ref, cat, count, isDark, categories),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -187,6 +199,110 @@ class CategoryManagementScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       }
     });
+  }
+
+  void _showEditCategoryDialog(
+    BuildContext context,
+    WidgetRef ref,
+    CategoryEntity cat,
+    bool isDark,
+    Color surface,
+    Color onBg,
+    Color onMuted,
+  ) {
+    final nameController = TextEditingController(text: cat.name);
+    String selectedEmoji = cat.emoji ?? _defaultEmojis.first;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          backgroundColor: surface,
+          title: Text(
+            'Modifier la catégorie',
+            style: TextStyle(color: onBg, fontWeight: FontWeight.w600),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Nom',
+                    labelStyle: TextStyle(color: onMuted),
+                    filled: true,
+                    fillColor: isDark ? AppPalette.darkPastelBackground : AppPalette.lightGray,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style: TextStyle(color: onBg),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Emoji',
+                  style: TextStyle(fontSize: 14, color: onMuted, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _defaultEmojis.map((emoji) {
+                    final selected = selectedEmoji == emoji;
+                    return GestureDetector(
+                      onTap: () => setState(() => selectedEmoji = emoji),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? (isDark ? AppPalette.darkPastelPrimaryOrange : AppPalette.primaryOrange)
+                              : (isDark ? AppPalette.darkPastelBorder : AppPalette.lightGray),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Annuler', style: TextStyle(color: onMuted)),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                final err = await ref
+                    .read(categoriesProvider.notifier)
+                    .updateCategory(cat.id, name, selectedEmoji);
+                if (!ctx.mounted) return;
+                if (err != null) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
+                  return;
+                }
+                Navigator.of(ctx).pop();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: isDark ? AppPalette.darkPastelPrimaryOrange : AppPalette.primaryOrange,
+                foregroundColor: AppPalette.white,
+              ),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAddCategoryDialog(

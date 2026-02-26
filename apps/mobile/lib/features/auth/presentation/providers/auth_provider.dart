@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
+import 'package:flutter_riverpod_clean_architecture/core/network/auth_event_bus.dart';
 import 'package:flutter_riverpod_clean_architecture/core/providers/storage_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/repositories/auth_repository_impl.dart';
@@ -38,10 +39,18 @@ class AuthState {
 }
 
 // Auth notifier
-// Auth notifier
 class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
+    // Listen for 401 Unauthorized events from the Dio interceptor and
+    // automatically log the user out when the session has expired.
+    final subscription = unauthorizedEventController.stream.listen((_) {
+      if (state.isAuthenticated) {
+        logout();
+      }
+    });
+    ref.onDispose(subscription.cancel);
+
     return const AuthState();
   }
 

@@ -65,7 +65,8 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isPlanning ? 'Planning' : 'Mes Recettes',
+          '👨‍🍳 Bienvenue chef ${widget.ref.read(authProvider).user?.name}!', 
+          //isPlanning ? 'On planifie le repas!' : 'Prêt à mijoter!',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             color: isDark

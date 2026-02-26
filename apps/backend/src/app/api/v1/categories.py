@@ -92,12 +92,12 @@ async def update_category(
     if str(db_category["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only update your own categories")
 
-    updated_category = await crud_categories.update(
-        db=db,
-        object=values,
-        id=category_id,
-        schema_to_select=CategoryRead,
-    )
+    # fastcrud's update() returns None in this version; fetch the record separately.
+    await crud_categories.update(db=db, object=values, id=category_id)
+
+    updated_category = await crud_categories.get(db=db, id=category_id, schema_to_select=CategoryRead)
+    if updated_category is None:
+        raise NotFoundException("Category not found after update")
 
     return updated_category
 

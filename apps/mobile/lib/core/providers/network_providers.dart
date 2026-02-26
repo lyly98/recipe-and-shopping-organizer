@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../network/auth_event_bus.dart';
 import '../network/interceptors/retry_interceptor.dart';
 import '../constants/app_constants.dart';
 
@@ -17,7 +18,19 @@ Dio dio(Ref ref) {
     'Accept': 'application/json',
   };
 
-  // Add interceptors here if needed
+  // Intercept 401 responses and broadcast an unauthorized event so that
+  // AuthNotifier can trigger logout without a circular import dependency.
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onError: (DioException e, ErrorInterceptorHandler handler) {
+        if (e.response?.statusCode == 401) {
+          unauthorizedEventController.add(null);
+        }
+        handler.next(e);
+      },
+    ),
+  );
+
   dio.interceptors.add(
     LogInterceptor(
       request: true,

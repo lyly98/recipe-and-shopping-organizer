@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/meal_plan_entry_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/domain/entities/recipe_entity.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod_clean_architecture/features/home/presentation/w
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/widgets/shopping_generator_card.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/widgets/shopping_list_view.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/providers/home_providers.dart';
+import 'package:go_router/go_router.dart';
 
 /// "Planning" tab: day strip, per-day meal slot cards,
 /// shopping list generator and list.
@@ -383,7 +385,7 @@ class _PlanningTabScreenState extends ConsumerState<PlanningTabScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Planning',
+                  '⏰ On planifie le repas',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: onBg,
@@ -605,6 +607,9 @@ class _MealSlotCard extends StatelessWidget {
                     _RecipeChip(
                       label: recipes[i].title,
                       isDark: isDark,
+                      onTap: () => context.push(
+                        '${AppConstants.recipeRoute}?id=${Uri.encodeComponent(recipes[i].id)}',
+                      ),
                       onRemove: () => onRemove(i),
                     ),
                 ],
@@ -656,11 +661,13 @@ class _RecipeChip extends StatelessWidget {
     required this.label,
     required this.isDark,
     required this.onRemove,
+    this.onTap,
   });
 
   final String label;
   final bool isDark;
   final VoidCallback onRemove;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -670,34 +677,37 @@ class _RecipeChip extends StatelessWidget {
     final onBg =
         isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: onBg,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: onBg,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: onRemove,
-            child: Icon(Icons.close, size: 14, color: accent),
-          ),
-        ],
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onRemove,
+              child: Icon(Icons.close, size: 14, color: accent),
+            ),
+          ],
+        ),
       ),
     );
   }

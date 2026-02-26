@@ -65,6 +65,22 @@ class CategoriesNotifier extends AsyncNotifier<List<CategoryEntity>> {
       },
     );
   }
+
+  Future<String?> updateCategory(String id, String name, String emoji) async {
+    final repo = ref.read(categoryRepositoryProvider);
+    final result = await repo.updateCategory(
+      id,
+      name: name.trim(),
+      emoji: emoji.trim().isEmpty ? null : emoji.trim(),
+    );
+    return result.fold(
+      (failure) => failure.message,
+      (_) {
+        ref.invalidateSelf();
+        return null;
+      },
+    );
+  }
 }
 
 final categoriesProvider =
