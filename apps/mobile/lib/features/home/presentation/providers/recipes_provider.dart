@@ -6,6 +6,8 @@ import 'package:flutter_riverpod_clean_architecture/features/home/providers/home
 class RecipesNotifier extends AsyncNotifier<List<RecipeEntity>> {
   @override
   Future<List<RecipeEntity>> build() async {
+    // Keep the sync listener alive while the recipes screen is active.
+    ref.watch(syncListenerProvider);
     return _load();
   }
 
@@ -62,6 +64,7 @@ class RecipesNotifier extends AsyncNotifier<List<RecipeEntity>> {
     required String title,
     String? categoryId,
     String? mealUsage,
+    int? servings,
     List<String>? imageUrls,
     required List<Map<String, dynamic>> ingredients,
     required List<Map<String, dynamic>> preparationSteps,
@@ -72,6 +75,7 @@ class RecipesNotifier extends AsyncNotifier<List<RecipeEntity>> {
       title: title,
       categoryId: categoryId,
       mealUsage: mealUsage,
+      servings: servings,
       imageUrls: imageUrls,
       ingredients: ingredients,
       preparationSteps: preparationSteps,

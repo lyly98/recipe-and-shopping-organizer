@@ -175,6 +175,12 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                         _Chip(label: categoryName, isDark: isDark),
                       if (recipe.mealUsage != null && recipe.mealUsage!.isNotEmpty)
                         _Chip(label: recipe.mealUsage!, isDark: isDark),
+                      if (recipe.servings > 0)
+                        _Chip(
+                          label: '${recipe.servings} personne${recipe.servings > 1 ? 's' : ''}',
+                          isDark: isDark,
+                          icon: Icons.people_outline,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -273,6 +279,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
               title: params['title'] as String? ?? '',
               categoryId: params['categoryId'] as String?,
               mealUsage: params['mealUsage'] as String?,
+              servings: params['servings'] as int?,
               imageUrls: _toStringList(params['imageUrls']),
               ingredients: _toMapList(params['ingredients']),
               preparationSteps: _toMapList(params['preparationSteps']),
@@ -307,26 +314,31 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.isDark});
+  const _Chip({required this.label, required this.isDark, this.icon});
 
   final String label;
   final bool isDark;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    final textColor = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isDark ? AppPalette.darkPastelSurfaceElevated : AppPalette.lightGray,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 13,
-          color: isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray,
-        ),
-      ),
+      child: icon != null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: textColor),
+                const SizedBox(width: 4),
+                Text(label, style: TextStyle(fontSize: 13, color: textColor)),
+              ],
+            )
+          : Text(label, style: TextStyle(fontSize: 13, color: textColor)),
     );
   }
 }

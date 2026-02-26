@@ -67,6 +67,7 @@ class RecipesTabScreen extends ConsumerWidget {
                                     title: params['title'] as String? ?? '',
                                     categoryId: _nullableString(params['categoryId']),
                                     mealUsage: _nullableString(params['mealUsage']),
+                                    servings: (params['servings'] as int?) ?? 1,
                                     imageUrls: _toStringList(params['imageUrls']),
                                     ingredients: _toMapList(params['ingredients']),
                                     preparationSteps: _toMapList(params['preparationSteps']),

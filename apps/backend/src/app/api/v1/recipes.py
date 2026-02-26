@@ -140,24 +140,42 @@ async def get_my_recipes(
     favorites_only: bool = Query(False, description="Show only favorites"),
 ) -> dict:
     """Get the current user's recipes (authenticated).
-    
-    This endpoint returns all recipes (public and private) owned by the current user.
+
+    Returns all recipes (public and private) owned by the current user,
+    including nested ingredients and preparation steps.
     """
-    filters = {"user_id": current_user["uuid"]}  # Already a UUID object
-    
+    filters: dict[str, Any] = {"user_id": current_user["uuid"]}
+
     if category_id:
         filters["category_id"] = category_id
-    
+
     if favorites_only:
         filters["is_favorite"] = True
-    
+
     recipes_data = await crud_recipes.get_multi(
         db=db,
         offset=compute_offset(page, items_per_page),
         limit=items_per_page,
+        schema_to_select=RecipeRead,
         **filters,
     )
-    
+
+    # Attach nested ingredients and preparation steps to each recipe
+    for recipe in recipes_data.get("data", []):
+        recipe_id = recipe["id"]
+        ingredients_list = await crud_ingredients.get_multi(
+            db=db,
+            recipe_id=recipe_id,
+            schema_to_select=IngredientRead,
+        )
+        steps_list = await crud_preparation_steps.get_multi(
+            db=db,
+            recipe_id=recipe_id,
+            schema_to_select=PreparationStepRead,
+        )
+        recipe["ingredients"] = ingredients_list.get("data", [])
+        recipe["preparation_steps"] = steps_list.get("data", [])
+
     response: dict[str, Any] = paginated_response(crud_data=recipes_data, page=page, items_per_page=items_per_page)
     return response
 

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod_clean_architecture/features/auth/data/datasourc
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/providers/auth_providers.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/categories_provider.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/presentation/providers/recipes_provider.dart';
 
 // Auth state
 class AuthState {
@@ -119,6 +121,9 @@ class AuthNotifier extends Notifier<AuthState> {
           user: user,
           errorMessage: null,
         );
+        // Flush previous user's in-memory data so this user gets a fresh fetch.
+        ref.invalidate(categoriesProvider);
+        ref.invalidate(recipesProvider);
         return null;
       },
     );
@@ -156,6 +161,9 @@ class AuthNotifier extends Notifier<AuthState> {
           user: user,
           errorMessage: null,
         );
+        // Flush previous user's in-memory data so this user gets a fresh fetch.
+        ref.invalidate(categoriesProvider);
+        ref.invalidate(recipesProvider);
         return null;
       },
     );
@@ -175,6 +183,9 @@ class AuthNotifier extends Notifier<AuthState> {
       ),
       (_) {
         ref.read(apiClientProvider).removeToken();
+        // Flush in-memory data so the next user cannot see this user's data.
+        ref.invalidate(categoriesProvider);
+        ref.invalidate(recipesProvider);
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: false,

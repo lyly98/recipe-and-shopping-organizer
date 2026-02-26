@@ -30,7 +30,7 @@ class AppConstants {
   static const String refreshTokenKey = 'refreshToken';
 
   // App constants
-  static const String appName = 'Recipe Organizer';
+  static const String appName = 'Chandir';
   static const String appVersion = '1.0.0';
   static const String packageName = 'com.recipe.organizer';
   static const String iOSAppId = '123456789';

@@ -6,16 +6,28 @@ import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants
 import 'package:flutter_riverpod_clean_architecture/core/providers/localization_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/core/providers/storage_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/core/router/app_router.dart';
+import 'package:flutter_riverpod_clean_architecture/core/storage/sync_queue.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_theme.dart';
 import 'package:flutter_riverpod_clean_architecture/core/updates/update_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/data/datasources/category_local_data_source.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/data/datasources/recipe_local_data_source.dart';
 import 'package:flutter_riverpod_clean_architecture/l10n/app_localizations_delegate.dart';
 import 'package:flutter_riverpod_clean_architecture/l10n/l10n.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive and open boxes used by the offline layer
+  final appDocDir = await getApplicationDocumentsDirectory();
+  Hive.init(appDocDir.path);
+  await Hive.openBox<String>(RecipeLocalDataSourceImpl.boxNameForInit);
+  await Hive.openBox<String>(CategoryLocalDataSourceImpl.boxNameForInit);
+  await Hive.openBox<String>(SyncQueue.boxName);
 
   // Initialize shared preferences
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -89,27 +101,30 @@ class MyApp extends ConsumerWidget {
     // Watch the persistent locale
     final locale = ref.watch(persistentLocaleProvider);
 
-    return UpdateChecker(
-      autoPrompt: true,
-      enforceCriticalUpdates: true,
-      child: AccessibilityWrapper(
-        child: MaterialApp.router(
-          title: AppConstants.appName,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeMode,
-          routerConfig: router,
-          debugShowCheckedModeBanner: false,
+    return AccessibilityWrapper(
+      child: MaterialApp.router(
+        title: AppConstants.appName,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
 
-          // Localization settings
-          locale: locale,
-          localizationsDelegates: [
-            const AppLocalizationsDelegate(),
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: AppLocalizations.supportedLocales,
+        // Localization settings
+        locale: locale,
+        localizationsDelegates: [
+          const AppLocalizationsDelegate(),
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+
+        // UpdateChecker lives inside MaterialApp so it has MaterialLocalizations.
+        builder: (context, child) => UpdateChecker(
+          autoPrompt: true,
+          enforceCriticalUpdates: true,
+          child: child ?? const SizedBox.shrink(),
         ),
       ),
     );

@@ -51,6 +51,7 @@ abstract class RecipeRepository {
     required String title,
     String? categoryId,
     String? mealUsage,
+    int? servings,
     List<String>? imageUrls,
     required List<Map<String, dynamic>> ingredients,
     required List<Map<String, dynamic>> preparationSteps,

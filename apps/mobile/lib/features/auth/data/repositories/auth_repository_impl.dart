@@ -1,15 +1,19 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/error/exceptions.dart';
 import 'package:flutter_riverpod_clean_architecture/core/error/failures.dart';
 import 'package:flutter_riverpod_clean_architecture/core/providers/storage_providers.dart';
 import 'package:flutter_riverpod_clean_architecture/core/storage/local_storage_service.dart';
 import 'package:flutter_riverpod_clean_architecture/core/storage/secure_storage_service.dart';
+import 'package:flutter_riverpod_clean_architecture/core/storage/sync_queue.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/data/models/user_model.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/entities/user_entity.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/domain/repositories/auth_repository.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/data/datasources/category_local_data_source.dart';
+import 'package:flutter_riverpod_clean_architecture/features/home/data/datasources/recipe_local_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -99,11 +103,13 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      // Remove user data from local storage
       await _localStorageService.remove(AppConstants.userDataKey);
-
-      // Remove auth token from secure storage
       await _secureStorageService.delete(key: AppConstants.tokenKey);
+
+      // Clear Hive caches so the next user cannot see the previous user's data.
+      await Hive.box<String>(RecipeLocalDataSourceImpl.boxNameForInit).clear();
+      await Hive.box<String>(CategoryLocalDataSourceImpl.boxNameForInit).clear();
+      await Hive.box<String>(SyncQueue.boxName).clear();
 
       return const Right(null);
     } on CacheException catch (e) {

@@ -160,6 +160,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
     required String title,
     String? categoryId,
     String? mealUsage,
+    int? servings,
     List<String>? imageUrls,
     required List<Map<String, dynamic>> ingredients,
     required List<Map<String, dynamic>> preparationSteps,
@@ -197,6 +198,7 @@ class RecipeRepositoryImpl implements RecipeRepository {
       final body = <String, dynamic>{
         'title': title.trim(),
         if (mealUsage != null && mealUsage.trim().isNotEmpty) 'meal_usage': mealUsage.trim(),
+        if (servings != null && servings > 0) 'servings': servings,
         'ingredients': ingredientsList,
         'preparation_steps': stepsList,
         if (imageUrls != null && imageUrls.isNotEmpty) 'image_urls': imageUrls,

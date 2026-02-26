@@ -8,7 +8,9 @@ from ...api.dependencies import get_current_superuser, get_current_user
 from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import DuplicateValueException, ForbiddenException, NotFoundException
 from ...core.security import blacklist_token, get_password_hash, oauth2_scheme
+from ...crud.crud_categories import crud_categories
 from ...crud.crud_users import crud_users
+from ...schemas.category import CategoryCreateInternal
 from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserUpdate, UserRegister
 
 router = APIRouter(tags=["users"])
@@ -38,6 +40,22 @@ async def register_user(
 
     if created_user is None:
         raise NotFoundException("Failed to create user")
+
+    default_categories = [
+        {"name": "Petit-déjeuner", "emoji": "🌅"},
+        {"name": "Déjeuner",       "emoji": "🍽️"},
+        {"name": "Dîner",          "emoji": "🌙"},
+        {"name": "Desserts",       "emoji": "🍰"},
+    ]
+    for cat in default_categories:
+        await crud_categories.create(
+            db=db,
+            object=CategoryCreateInternal(
+                name=cat["name"],
+                emoji=cat["emoji"],
+                user_id=created_user["uuid"],
+            ),
+        )
 
     await db.commit()
     return created_user

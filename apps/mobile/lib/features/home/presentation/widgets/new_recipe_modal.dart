@@ -94,6 +94,7 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
   String? _selectedCategoryId;
   String? _imagePath;
   String? _imageUrl;
+  int _servings = 1;
   final _picker = ImagePicker();
 
   bool get _isEditing => widget.existingRecipe != null;
@@ -109,6 +110,7 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
       _titreController.text = recipe.title;
       _motCleController.text = recipe.mealUsage ?? '';
       _selectedCategoryId = recipe.categoryId;
+      _servings = recipe.servings > 0 ? recipe.servings : 1;
       final firstUrl = recipe.imageUrls?.isNotEmpty == true ? recipe.imageUrls!.first : null;
       _imageUrl = firstUrl;
 
@@ -250,6 +252,7 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
       'title': titre,
       'categoryId': categoryId,
       'mealUsage': _motCleController.text.trim().isEmpty ? null : _motCleController.text.trim(),
+      'servings': _servings,
       'imageUrls': imageUrls,
       'ingredients': ingredientMaps,
       'preparationSteps': stepMaps,
@@ -357,6 +360,10 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                         maxLines: 2,
                         decoration: _inputDecoration(context, isDark, 'Ex. Apéritif, Brunch...'),
                       ),
+                      const SizedBox(height: 20),
+                      _buildLabel('Nombre de personnes'),
+                      const SizedBox(height: 8),
+                      _buildServingsStepper(isDark, orange),
                       const SizedBox(height: 20),
                       _buildLabel('Ingrédients'),
                       const SizedBox(height: 4),
@@ -581,6 +588,40 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServingsStepper(bool isDark, Color orange) {
+    final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
+    final bg = isDark ? AppPalette.darkPastelSurface : AppPalette.lightGray;
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: onBg.withOpacity(0.2)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: _servings > 1 ? () => setState(() => _servings--) : null,
+            icon: Icon(Icons.remove, color: _servings > 1 ? orange : onBg.withOpacity(0.3)),
+            splashRadius: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$_servings personne${_servings > 1 ? 's' : ''}',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: onBg),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () => setState(() => _servings++),
+            icon: Icon(Icons.add, color: orange),
+            splashRadius: 20,
+          ),
         ],
       ),
     );
