@@ -396,7 +396,14 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                           const Spacer(),
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Annuler'),
+                            child: Text(
+                              'Annuler',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppPalette.darkPastelOnSurfaceMuted
+                                    : AppPalette.mediumGray,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(

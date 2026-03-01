@@ -180,7 +180,10 @@ class CategoryManagementScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Annuler', style: TextStyle(color: isDark ? AppPalette.darkPastelPrimaryBlue : AppPalette.primaryBlue)),
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: isDark ? AppPalette.darkPastelOnSurfaceMuted : AppPalette.mediumGray),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),

@@ -36,45 +36,42 @@ class AppPalette {
   static const Color categorySoupes = Color(0xFFFAF0E6);
 
   // ---------------------------------------------------------------------------
-  // Dark pastels (backgrounds, surfaces, cards)
+  // Dark theme — Instagram-style: black, white, one accent
   // ---------------------------------------------------------------------------
 
-  /// Dark pastel background (main scaffold)
-  static const Color darkPastelBackground = Color(0xFF2C292E);
+  /// Background layers (black → dark gray)
+  static const Color darkPastelBackground = Color(0xFF000000);
+  static const Color darkPastelSurface = Color(0xFF121212);
+  static const Color darkPastelSurfaceElevated = Color(0xFF1C1C1E);
+  static const Color darkPastelBorder = Color(0xFF2C2C2E);
 
-  /// Dark pastel surface (cards, app bar, bottom nav)
-  static const Color darkPastelSurface = Color(0xFF3A363D);
+  /// Text (white / gray only)
+  static const Color darkPastelOnBackground = Color(0xFFFFFFFF);
+  static const Color darkPastelOnSurfaceMuted = Color(0xFF8E8E93);
 
-  /// Dark pastel surface elevated (dialogs, menus)
-  static const Color darkPastelSurfaceElevated = Color(0xFF454148);
+  /// Single accent — Instagram-style pink (used for all accents)
+  static const Color darkPastelAccent = Color(0xFFE1306C);
 
-  /// Dark pastel border / divider
-  static const Color darkPastelBorder = Color(0xFF4D4950);
+  /// Accent tints — same accent for icons & subtle UI (no extra colors)
+  static const Color darkPastelSage = Color(0xFFE1306C);
+  static const Color darkPastelMauve = Color(0xFFE1306C);
+  static const Color darkPastelDustBlue = Color(0xFFE1306C);
+  static const Color darkPastelTerracotta = Color(0xFFE1306C);
+  static const Color darkPastelOlive = Color(0xFFE1306C);
+  static const Color darkPastelDustyRose = Color(0xFFE1306C);
+  static const Color darkPastelWarmBeige = Color(0xFFE1306C);
+  static const Color darkPastelSlate = Color(0xFFE1306C);
 
-  /// Text on dark pastel
-  static const Color darkPastelOnBackground = Color(0xFFE8E4E9);
-  static const Color darkPastelOnSurfaceMuted = Color(0xFFB0ACB2);
+  /// Category cards — dark grays only (no colored tints)
+  static const Color darkPastelCategoryPlats = Color(0xFF1A1A1A);
+  static const Color darkPastelCategoryPains = Color(0xFF1E1E1E);
+  static const Color darkPastelCategoryDesserts = Color(0xFF222222);
+  static const Color darkPastelCategoryJus = Color(0xFF1A1A1A);
+  static const Color darkPastelCategorySnacks = Color(0xFF1E1E1E);
+  static const Color darkPastelCategorySoupes = Color(0xFF222222);
 
-  /// Dark pastel accent tints (for category cards and subtle UI)
-  static const Color darkPastelSage = Color(0xFF7D8B7A);
-  static const Color darkPastelMauve = Color(0xFF8B7D8B);
-  static const Color darkPastelDustBlue = Color(0xFF7A8B9A);
-  static const Color darkPastelTerracotta = Color(0xFF9A7A6B);
-  static const Color darkPastelOlive = Color(0xFF6B7A6B);
-  static const Color darkPastelDustyRose = Color(0xFF8B7A7D);
-  static const Color darkPastelWarmBeige = Color(0xFF8B857A);
-  static const Color darkPastelSlate = Color(0xFF7A858B);
-
-  /// Category card backgrounds (dark pastel variant)
-  static const Color darkPastelCategoryPlats = Color(0xFF5C5A4A);
-  static const Color darkPastelCategoryPains = Color(0xFF6B5A4A);
-  static const Color darkPastelCategoryDesserts = Color(0xFF6B5A5A);
-  static const Color darkPastelCategoryJus = Color(0xFF4A5A5C);
-  static const Color darkPastelCategorySnacks = Color(0xFF6B5A5C);
-  static const Color darkPastelCategorySoupes = Color(0xFF5A5A4A);
-
-  /// Primary actions on dark pastel (slightly softened for contrast)
-  static const Color darkPastelPrimaryOrange = Color(0xFFE07A38);
-  static const Color darkPastelPrimaryPink = Color(0xFFD1438A);
-  static const Color darkPastelPrimaryBlue = Color(0xFF4A7BC2);
+  /// Primary actions — single accent for all (Instagram pink)
+  static const Color darkPastelPrimaryOrange = Color(0xFFE1306C);
+  static const Color darkPastelPrimaryPink = Color(0xFFE1306C);
+  static const Color darkPastelPrimaryBlue = Color(0xFFE1306C);
 }

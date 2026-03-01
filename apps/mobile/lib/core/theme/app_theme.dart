@@ -18,11 +18,12 @@ class AppTheme {
       onSurfaceVariant: AppPalette.mediumGray,
       outline: AppPalette.lightGray,
     ),
+    scaffoldBackgroundColor: AppPalette.cream,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      foregroundColor: Colors.black,
+      foregroundColor: AppPalette.darkGray,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -71,13 +72,14 @@ class AppTheme {
       onSurface: AppPalette.darkPastelOnBackground,
       onSurfaceVariant: AppPalette.darkPastelOnSurfaceMuted,
       outline: AppPalette.darkPastelBorder,
+      surfaceTint: Colors.transparent,
     ),
     scaffoldBackgroundColor: AppPalette.darkPastelBackground,
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      foregroundColor: Colors.white,
+      foregroundColor: AppPalette.darkPastelOnBackground,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

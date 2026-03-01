@@ -60,7 +60,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isPlanning = _tabController.index == 1;
+    //final isPlanning = _tabController.index == 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -124,6 +124,8 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
       ),
       child: TabBar(
         controller: _tabController,
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: isDark
@@ -158,7 +160,10 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
