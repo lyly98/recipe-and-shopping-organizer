@@ -15,7 +15,6 @@ from ...schemas.meal_plan import (
     MealPlanEntryCreate,
     MealPlanEntryCreateInternal,
     MealPlanEntryRead,
-    RecipeLightRead,
 )
 
 router = APIRouter(tags=["meal-plan"])
@@ -49,6 +48,7 @@ async def get_meal_plan(
 ) -> list[dict[str, Any]]:
     """Return all meal plan entries for the current user within [start_date, end_date]."""
     from sqlalchemy import and_, select
+
     from ...models.meal_plan import MealPlanEntry
     from ...models.recipe import Recipe
 

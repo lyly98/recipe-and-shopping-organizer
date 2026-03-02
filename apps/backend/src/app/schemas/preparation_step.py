@@ -33,5 +33,8 @@ class PreparationStepUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     step_number: Annotated[int | None, Field(ge=1, examples=[1], default=None)]
-    instruction: Annotated[str | None, Field(min_length=1, max_length=1000, examples=["Preheat oven to 375°F"], default=None)]
+    instruction: Annotated[
+        str | None,
+        Field(min_length=1, max_length=1000, examples=["Preheat oven to 375°F"], default=None),
+    ]
     duration_minutes: Annotated[int | None, Field(ge=0, examples=[10], default=None)]

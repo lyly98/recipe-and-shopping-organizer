@@ -32,17 +32,17 @@ async def create_recipe(
     # Extract nested data
     ingredients_data = recipe.ingredients
     preparation_steps_data = recipe.preparation_steps
-    
+
     # Create recipe data (without nested objects)
     recipe_dict = recipe.model_dump(exclude={"ingredients", "preparation_steps"})
     recipe_dict["user_id"] = current_user["uuid"]  # Already a UUID object
-    
+
     recipe_internal = RecipeCreateInternal(**recipe_dict)
     created_recipe = await crud_recipes.create(db=db, object=recipe_internal, schema_to_select=RecipeRead)
-    
+
     if created_recipe is None:
         raise NotFoundException("Failed to create recipe")
-    
+
     # Create ingredients
     for ingredient in ingredients_data:
         ingredient_dict = ingredient.model_dump()
@@ -50,7 +50,7 @@ async def create_recipe(
         from ...schemas.ingredient import IngredientCreateInternal
         ingredient_internal = IngredientCreateInternal(**ingredient_dict)
         await crud_ingredients.create(db=db, object=ingredient_internal)
-    
+
     # Create preparation steps
     for step in preparation_steps_data:
         step_dict = step.model_dump()
@@ -58,27 +58,27 @@ async def create_recipe(
         from ...schemas.preparation_step import PreparationStepCreateInternal
         step_internal = PreparationStepCreateInternal(**step_dict)
         await crud_preparation_steps.create(db=db, object=step_internal)
-    
+
     # Fetch ingredients and preparation steps separately
     from ...schemas.ingredient import IngredientRead
     from ...schemas.preparation_step import PreparationStepRead
-    
+
     ingredients_list = await crud_ingredients.get_multi(
         db=db,
         recipe_id=created_recipe["id"],
         schema_to_select=IngredientRead,
     )
-    
+
     steps_list = await crud_preparation_steps.get_multi(
         db=db,
         recipe_id=created_recipe["id"],
         schema_to_select=PreparationStepRead,
     )
-    
+
     # Construct response with nested data
     created_recipe["ingredients"] = ingredients_list.get("data", [])
     created_recipe["preparation_steps"] = steps_list.get("data", [])
-    
+
     return created_recipe
 
 
@@ -99,24 +99,24 @@ async def get_recipes(
     user_id: UUID | None = Query(None, description="Filter by user ID"),
 ) -> dict:
     """Get recipes with filters (paginated).
-    
+
     By default, returns public recipes only.
     Use public_only=false with authentication to see all accessible recipes.
     """
     filters = {}
-    
+
     if category_id:
         filters["category_id"] = category_id
-    
+
     if favorites_only:
         filters["is_favorite"] = True
-    
+
     if public_only:
         filters["is_public"] = True
-    
+
     if user_id:
         filters["user_id"] = user_id
-    
+
     recipes_data = await crud_recipes.get_multi(
         db=db,
         offset=compute_offset(page, items_per_page),
@@ -124,7 +124,7 @@ async def get_recipes(
         schema_to_select=RecipeRead,
         **filters,
     )
-    
+
     response: dict[str, Any] = paginated_response(crud_data=recipes_data, page=page, items_per_page=items_per_page)
     return response
 
@@ -322,17 +322,17 @@ async def delete_recipe(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> None:
     """Delete a recipe (authenticated, owner only).
-    
+
     This will cascade delete all ingredients and preparation steps.
     """
     db_recipe = await crud_recipes.get(db=db, id=recipe_id)
     if db_recipe is None:
         raise NotFoundException("Recipe not found")
-    
+
     # Check ownership
     if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only delete your own recipes")
-    
+
     await crud_recipes.delete(db=db, id=recipe_id)
 
 
@@ -348,11 +348,11 @@ async def toggle_favorite(
     db_recipe = await crud_recipes.get(db=db, id=recipe_id)
     if db_recipe is None:
         raise NotFoundException("Recipe not found")
-    
+
     # Check ownership
     if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only favorite your own recipes")
-    
+
     # Toggle favorite
     updated_recipe = await crud_recipes.update(
         db=db,
@@ -360,5 +360,5 @@ async def toggle_favorite(
         id=recipe_id,
         schema_to_select=RecipeRead,
     )
-    
+
     return updated_recipe

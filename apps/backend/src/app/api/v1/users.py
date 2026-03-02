@@ -11,7 +11,7 @@ from ...core.security import blacklist_token, get_password_hash, oauth2_scheme
 from ...crud.crud_categories import crud_categories
 from ...crud.crud_users import crud_users
 from ...schemas.category import CategoryCreateInternal
-from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserUpdate, UserRegister
+from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserRegister, UserUpdate
 
 router = APIRouter(tags=["users"])
 

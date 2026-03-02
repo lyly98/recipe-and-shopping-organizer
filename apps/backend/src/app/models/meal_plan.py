@@ -1,6 +1,9 @@
 """MealPlanEntry model for the recipe and shopping organizer."""
+from __future__ import annotations
+
 import uuid as uuid_pkg
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
@@ -8,6 +11,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 
 from ..core.db.database import Base
+
+if TYPE_CHECKING:
+    from .recipe import Recipe
 
 
 class MealPlanEntry(Base):
@@ -41,6 +47,6 @@ class MealPlanEntry(Base):
         init=False,
     )
 
-    recipe: Mapped["Recipe"] = relationship(  # type: ignore[name-defined]
+    recipe: Mapped[Recipe] = relationship(
         "Recipe", lazy="joined", init=False
     )

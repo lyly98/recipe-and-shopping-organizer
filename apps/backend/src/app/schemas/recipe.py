@@ -30,7 +30,7 @@ class RecipeRead(RecipeBase):
     view_count: int
     created_at: datetime
     updated_at: datetime | None
-    
+
     # Include nested ingredients and steps
     ingredients: list[IngredientRead] = []
     preparation_steps: list[PreparationStepRead] = []
@@ -43,7 +43,7 @@ class RecipeCreate(RecipeBase):
     category_id: Annotated[UUID | None, Field(examples=["550e8400-e29b-41d4-a716-446655440000"], default=None)]
     image_urls: Annotated[list[str] | None, Field(examples=[["https://example.com/image.jpg"]], default=None)]
     tags: Annotated[list[str] | None, Field(examples=[["dessert", "quick"]], default=None)]
-    
+
     # Nested creation
     ingredients: list[IngredientCreate] = []
     preparation_steps: list[PreparationStepCreate] = []
