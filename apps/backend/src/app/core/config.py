@@ -104,13 +104,21 @@ class TestSettings(BaseSettings):
     ...
 
 
-class RedisCacheSettings(BaseSettings):
+class RedisCommonSettings(BaseSettings):
+    # Optional full Redis DSN (redis:// or rediss://). When set, it is reused
+    # for cache, queue, and rate limiting to support hosted Redis providers.
+    REDIS_URL: str | None = None
+
+
+class RedisCacheSettings(RedisCommonSettings):
     REDIS_CACHE_HOST: str = "localhost"
     REDIS_CACHE_PORT: int = 6379
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def REDIS_CACHE_URL(self) -> str:
+        if self.REDIS_URL:
+            return self.REDIS_URL
         return f"redis://{self.REDIS_CACHE_HOST}:{self.REDIS_CACHE_PORT}"
 
 
@@ -118,18 +126,27 @@ class ClientSideCacheSettings(BaseSettings):
     CLIENT_CACHE_MAX_AGE: int = 60
 
 
-class RedisQueueSettings(BaseSettings):
+class RedisQueueSettings(RedisCommonSettings):
     REDIS_QUEUE_HOST: str = "localhost"
     REDIS_QUEUE_PORT: int = 6379
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def REDIS_QUEUE_URL(self) -> str:
+        if self.REDIS_URL:
+            return self.REDIS_URL
+        return f"redis://{self.REDIS_QUEUE_HOST}:{self.REDIS_QUEUE_PORT}"
 
-class RedisRateLimiterSettings(BaseSettings):
+
+class RedisRateLimiterSettings(RedisCommonSettings):
     REDIS_RATE_LIMIT_HOST: str = "localhost"
     REDIS_RATE_LIMIT_PORT: int = 6379
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def REDIS_RATE_LIMIT_URL(self) -> str:
+        if self.REDIS_URL:
+            return self.REDIS_URL
         return f"redis://{self.REDIS_RATE_LIMIT_HOST}:{self.REDIS_RATE_LIMIT_PORT}"
 
 
