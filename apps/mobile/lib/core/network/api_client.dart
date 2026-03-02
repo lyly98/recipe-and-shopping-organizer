@@ -31,10 +31,33 @@ class ApiClient {
     }
   }
 
+  /// POST multipart/form-data with a file. Used for image upload.
+  Future<Either<Failure, dynamic>> postMultipart(String path, {required String filePath}) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      final response = await _dio.post(path, data: formData);
+      return Right(response.data);
+    } on DioException catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
   // PUT request
   Future<Either<Failure, dynamic>> put(String path, {dynamic data}) async {
     try {
       final response = await _dio.put(path, data: data);
+      return Right(response.data);
+    } on DioException catch (e) {
+      return Left(_handleError(e));
+    }
+  }
+
+  // PATCH request
+  Future<Either<Failure, dynamic>> patch(String path, {dynamic data}) async {
+    try {
+      final response = await _dio.patch(path, data: data);
       return Right(response.data);
     } on DioException catch (e) {
       return Left(_handleError(e));
@@ -61,32 +84,20 @@ class ApiClient {
       case DioExceptionType.badResponse:
         switch (e.response?.statusCode) {
           case 400:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Bad Request',
-            );
+            return ServerFailure(message: _extractMessage(e.response?.data, 'Bad Request'));
           case 401:
-            return UnauthorizedFailure(
-              message: e.response?.data['message'] ?? 'Unauthorized',
-            );
+            return UnauthorizedFailure(message: _extractMessage(e.response?.data, 'Unauthorized'));
           case 403:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Forbidden',
-            );
+            return ServerFailure(message: _extractMessage(e.response?.data, 'Forbidden'));
           case 404:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Not Found',
-            );
+            return ServerFailure(message: _extractMessage(e.response?.data, 'Not Found'));
           case 500:
           case 501:
           case 502:
           case 503:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Server Error',
-            );
+            return ServerFailure(message: _extractMessage(e.response?.data, 'Server Error'));
           default:
-            return ServerFailure(
-              message: e.response?.data['message'] ?? 'Unknown error occurred',
-            );
+            return ServerFailure(message: _extractMessage(e.response?.data, 'Unknown error occurred'));
         }
       case DioExceptionType.cancel:
         return const ServerFailure(message: 'Request cancelled');
@@ -98,6 +109,18 @@ class ApiClient {
       default:
         return const ServerFailure(message: 'Unknown error occurred');
     }
+  }
+
+  /// Safely extracts a human-readable message from a response body that may be
+  /// a JSON map, a plain string, or null.
+  String _extractMessage(dynamic data, String fallback) {
+    if (data == null) return fallback;
+    if (data is String) return data.isNotEmpty ? data : fallback;
+    if (data is Map) {
+      final msg = data['message'] ?? data['detail'];
+      if (msg != null) return msg.toString();
+    }
+    return fallback;
   }
 
   // Add token to headers

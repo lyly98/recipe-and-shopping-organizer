@@ -135,6 +135,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+.cursor/
 
 # Translations
 *.mo
@@ -353,3 +354,6 @@ htmlcov/
 
 # CI/CD
 .github/secrets/
+
+apps/backend/static/uploads/
+apps/backend/src/static/uploads/

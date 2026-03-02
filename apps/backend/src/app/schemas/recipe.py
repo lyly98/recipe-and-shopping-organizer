@@ -30,7 +30,7 @@ class RecipeRead(RecipeBase):
     view_count: int
     created_at: datetime
     updated_at: datetime | None
-    
+
     # Include nested ingredients and steps
     ingredients: list[IngredientRead] = []
     preparation_steps: list[PreparationStepRead] = []
@@ -43,7 +43,7 @@ class RecipeCreate(RecipeBase):
     category_id: Annotated[UUID | None, Field(examples=["550e8400-e29b-41d4-a716-446655440000"], default=None)]
     image_urls: Annotated[list[str] | None, Field(examples=[["https://example.com/image.jpg"]], default=None)]
     tags: Annotated[list[str] | None, Field(examples=[["dessert", "quick"]], default=None)]
-    
+
     # Nested creation
     ingredients: list[IngredientCreate] = []
     preparation_steps: list[PreparationStepCreate] = []
@@ -57,8 +57,8 @@ class RecipeCreateInternal(RecipeBase):
     tags: Annotated[list[str] | None, Field(examples=[["dessert", "quick"]], default=None)]
 
 
-class RecipeUpdate(BaseModel):
-    """Schema for updating a recipe (request)."""
+class RecipeUpdateBase(BaseModel):
+    """Flat (ORM-safe) fields shared between RecipeUpdate and RecipeUpdateInternal."""
     model_config = ConfigDict(extra="forbid")
 
     title: Annotated[str | None, Field(min_length=1, max_length=200, examples=["Chocolate Chip Cookies"], default=None)]
@@ -73,6 +73,16 @@ class RecipeUpdate(BaseModel):
     is_public: Annotated[bool | None, Field(examples=[False], default=None)]
 
 
-class RecipeUpdateInternal(RecipeUpdate):
-    """Internal schema for recipe updates."""
+class RecipeUpdate(RecipeUpdateBase):
+    """Schema for updating a recipe (request).
+
+    When ``ingredients`` or ``preparation_steps`` are supplied, the existing
+    items for the recipe are **replaced** (delete-all then re-create).
+    """
+    ingredients: list[IngredientCreate] | None = None
+    preparation_steps: list[PreparationStepCreate] | None = None
+
+
+class RecipeUpdateInternal(RecipeUpdateBase):
+    """Internal schema passed to the ORM — contains only flat recipe columns."""
     updated_at: datetime

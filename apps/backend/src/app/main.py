@@ -1,7 +1,9 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from .admin.initialize import create_admin_interface
 from .api import router
@@ -28,6 +30,11 @@ async def lifespan_with_admin(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = create_application(router=router, settings=settings, lifespan=lifespan_with_admin)
+
+# Serve uploaded recipe images at /static/uploads/...
+static_dir = Path(__file__).resolve().parent.parent.parent / "static"
+(static_dir / "uploads").mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Mount admin interface if enabled
 if admin:

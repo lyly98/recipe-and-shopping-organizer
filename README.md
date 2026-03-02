@@ -1,10 +1,8 @@
 # Recipe and Shopping Organizer
 
-A comprehensive mobile application for organizing recipes, meal planning, and grocery shopping.
+A full-stack mobile application for organizing recipes, planning weekly meals, and generating grocery shopping lists.
 
-## 📱 Monorepo Structure
-
-This is a **monorepo** containing both the Flutter mobile app and FastAPI backend in a single repository.
+## Monorepo Structure
 
 ```
 recipe-and-shopping-organizer/
@@ -12,220 +10,284 @@ recipe-and-shopping-organizer/
 │   ├── mobile/          # Flutter app (iOS & Android)
 │   └── backend/         # FastAPI backend
 ├── docs/                # Technical documentation
-└── scripts/             # Development & deployment scripts
+├── scripts/             # Development & deployment scripts
+├── docker-compose.yml   # Local development environment
+└── MONOREPO-GUIDE.md    # Monorepo documentation
 ```
 
-## Overview
+## Features
 
-This application helps users manage their daily cooking, planning, and shopping needs with features including recipe management with categories, video-based recipe import, and automated grocery list generation from weekly meal plans.
-
-## Key Features
-
-### 1. Recipe Management
-- Create and store recipes with detailed information (title, ingredients, preparation steps, images)
-- Organize recipes into customizable categories (Plats, Pains, Desserts, Jus, Snacks, Soupes, etc.)
-- Add recipe images and emojis for visual identification
+### Recipe Management
+- Create and store recipes with title, ingredients, preparation steps, and images
+- Organize recipes into customizable categories with emojis and colors
+- Default categories: Petit-déjeuner, Déjeuner, Dîner, Desserts
 - Search and filter recipes within categories
+- Toggle recipes as favorites; track view counts
+- Public and private recipe visibility
 
-### 2. Video Recipe Import
-- Import recipes from social media platforms (TikTok, Instagram, YouTube, Facebook)
-- Paste video URL to extract and transcribe recipe content
-- Auto-populate recipe fields from video content
-- Support for multiple video platforms
+### Video / Link Recipe Import
+- Import recipes by pasting a URL (TikTok, Instagram, YouTube, Facebook)
+- Auto-populate recipe fields from extracted content
 
-### 3. Meal Planning
-- Weekly meal planning view (7 days)
-- Two meal slots per day (Breakfast/Petit-déj and Lunch/Déjeuner, or Snack and Dinner/Dîner)
-- Drag-and-drop or select recipes for each meal slot
-- View recipe suggestions based on saved categories
-- Empty state management for planned meals
+### Meal Planning
+- Weekly planning view (7 days)
+- Two meal slots per day
+- Assign saved recipes to any slot
+- Remove or swap planned meals
 
-### 4. Grocery Shopping List
-- Auto-generate shopping list from weekly meal plan
+### Grocery Shopping List
+- Auto-generate a consolidated shopping list from the weekly meal plan
 - Specify number of servings/people
-- Consolidated list of all ingredients needed
-- Export or share shopping list
-- Link to external grocery services integration (planned feature)
+- View and manage the full ingredient list
 
-## Documentation Structure
+### Other
+- WebSocket-based chat screen
+- Onboarding/feedback survey flow
+- Settings: theme, language (EN, ES, FR, DE, JA, BN), accessibility
+- Biometric authentication support
+- Offline-aware data layer with sync queue
 
-```
-docs/
-├── 01-requirements.md          # Functional & non-functional requirements
-├── 02-uml-diagrams.md          # Use case, class, activity, state diagrams
-├── 03-sequence-diagrams.md     # Sequence diagrams for key flows
-├── 04-database-schema.md       # Database ERD and schema
-├── 05-architecture.md          # System architecture
-├── 06-tech-stack-guide.md      # Technology stack evaluation guide
-├── 07-figma-design-reference.md # Figma design system and UI components
-└── diagrams/                    # Mermaid diagram source files
-```
+---
 
-## Design
+## Tech Stack
 
-**Figma Design File**: [View in Figma](https://www.figma.com/make/zYcBkRQoCvYTxrCIS8yiHZ/Recipe-and-Shopping-Organizer?fullscreen=1&t=n9UskWVIBXlHV4cO-1)
+### Mobile (Flutter)
 
-The complete design system and UI components are documented in `docs/07-figma-design-reference.md`.
+| Concern | Library |
+|---|---|
+| Language | Dart (SDK ≥ 3.10) |
+| State management | Riverpod 3 + code generation |
+| Routing | `go_router` |
+| HTTP client | `dio` |
+| Functional error handling | `fpdart` (`Either`) |
+| Data classes | `freezed` + `json_serializable` |
+| Local storage | `hive`, `shared_preferences` |
+| Secure storage | `flutter_secure_storage` |
+| Image | `cached_network_image`, `image_picker` |
+| Forms | `flutter_form_builder` + validators |
+| Biometrics | `local_auth` |
+| WebSocket | `web_socket_channel` |
+| Background tasks | `workmanager` |
+| i18n | Flutter `intl` (6 locales) |
 
-The Figma file showcases:
-- Recipe categories view with grid layout and emoji icons
-- Category management interface with add/edit functionality
-- Video import modal with platform selection (TikTok, Instagram, YouTube, Facebook)
-- Weekly meal planning calendar with two meal slots per day
-- Meal detail tooltips showing recipe information
-- Shopping list generation and management interface
-- Recipe creation form with multi-step workflow
-- Color palette, typography, and component specifications
+### Backend (FastAPI)
 
-Design screenshots are also available in the `assets/` folder for quick reference.
+| Concern | Library |
+|---|---|
+| Language | Python 3.11+ |
+| Framework | FastAPI |
+| ORM | SQLAlchemy 2.0 (async) |
+| Database | PostgreSQL 15 (asyncpg) |
+| Cache / Queue | Redis 7 (`redis`, `arq`) |
+| Auth | JWT (`python-jose`), bcrypt |
+| CRUD abstraction | `fastcrud`, `crudadmin` |
+| Migrations | Alembic |
+| Validation | Pydantic v2 |
+| Linting | Ruff, mypy |
+| Logging | `structlog`, `rich` |
+| Server | Uvicorn + Gunicorn |
 
-## 🚀 Quick Start
+### Infrastructure
+- Docker Compose (PostgreSQL 15 + Redis 7)
+- Nginx (production reverse proxy)
+- Fastlane (iOS & Android deployment automation)
+- CI/CD via GitHub Actions
+
+---
+
+## API Reference
+
+All routes are prefixed with `/api/v1`.
+
+### Auth
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/login` | Obtain access + refresh tokens |
+| POST | `/logout` | Blacklist current token |
+
+### Users
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/register` | Create account (seeds default categories) |
+| GET | `/user/me/` | Current authenticated user |
+| GET | `/user/{username}` | Get user by username |
+| PATCH | `/user/{username}` | Update user (owner only) |
+| DELETE | `/user/{username}` | Soft-delete user (owner only) |
+
+### Recipes
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/recipes` | Create recipe with ingredients & steps |
+| GET | `/recipes` | Paginated list (filters: `category_id`, `favorites_only`, `public_only`) |
+| GET | `/recipes/my` | Current user's recipes with nested data |
+| GET | `/recipes/{recipe_id}` | Recipe detail (increments view count) |
+| PATCH | `/recipes/{recipe_id}` | Update recipe |
+| DELETE | `/recipes/{recipe_id}` | Delete recipe (cascades) |
+| POST | `/recipes/{recipe_id}/favorite` | Toggle favorite |
+
+### Categories
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/categories` | Create category |
+| GET | `/categories` | User's categories (paginated) |
+| GET | `/categories/{category_id}` | Get category |
+| PATCH | `/categories/{category_id}` | Update category |
+| DELETE | `/categories/{category_id}` | Delete category |
+
+### Meal Plan
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/meal-plan` | Entries for date range (`start_date`, `end_date`) |
+| POST | `/meal-plan` | Add recipe to a meal slot |
+| DELETE | `/meal-plan/{entry_id}` | Remove meal plan entry |
+
+### Upload
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/upload/image` | Upload recipe image (JPEG/PNG/WebP/GIF, max 10 MB) |
+
+### Health
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+
+Interactive API docs are available at `http://localhost:8000/docs` when the backend is running.
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- **Flutter** 3.16+ ([Install](https://docs.flutter.dev/get-started/install))
-- **Python** 3.11+ ([Install](https://www.python.org/downloads/))
-- **Docker** & Docker Compose ([Install](https://docs.docker.com/get-docker/))
-- **PostgreSQL** 15+ (via Docker or local)
+- **Flutter** 3.16+ — [Install](https://docs.flutter.dev/get-started/install)
+- **Python** 3.11+ — [Install](https://www.python.org/downloads/)
+- **Docker** & Docker Compose — [Install](https://docs.docker.com/get-docker/)
 
-### Setup (Development)
-
-**Option 1: Using Docker (Recommended)**
+### Option 1: Docker (Recommended)
 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
 cd recipe-and-shopping-organizer
 
-# Start all services (backend, database, redis)
+# Start backend, database, and Redis
 docker-compose up -d
 
-# Run Flutter app
+# Run the Flutter app
 cd apps/mobile
 flutter pub get
 flutter run
 ```
 
-**Option 2: Local Development (No Docker)**
+### Option 2: Local Development (No Docker)
 
 ```bash
-# Backend setup
+# Backend
 cd apps/backend
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cd src
+alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 
-# In another terminal - Mobile setup
+# Mobile (in a separate terminal)
 cd apps/mobile
 flutter pub get
 flutter run
 ```
 
-### First Time Setup
-
-1. **Create admin user:**
-   ```bash
-   docker-compose run --rm backend python -m app.scripts.create_superuser
-   ```
-
-2. **Run database migrations:**
-   ```bash
-   cd apps/backend
-   alembic upgrade head
-   ```
-
-3. **Access the API docs:**
-   - Backend API: http://localhost:8000/docs
-   - Mobile App: Running on emulator/simulator
-
-See detailed setup instructions in `docs/05-architecture.md`.
-
-## Tech Stack ✅
-
-**Frontend:**
-- Flutter (iOS & Android)
-- State Management: Provider/Riverpod
-- HTTP Client: Dio
-
-**Backend:**
-- Python 3.11+ with FastAPI
-- SQLAlchemy ORM
-- Pydantic for validation
-- Alembic for migrations
-
-**Database:**
-- PostgreSQL 15+
-
-**Infrastructure:**
-- Hosting: Railway or Render
-- Storage: Cloudinary
-- Email: SendGrid
-
-See `docs/05-architecture.md` for detailed architecture and setup instructions.
-
-## 📁 Repository Organization
-
-This monorepo follows **standard Flutter + Backend** structure:
-
-```
-recipe-and-shopping-organizer/
-├── apps/
-│   ├── mobile/          # Flutter app (iOS & Android)
-│   └── backend/         # FastAPI backend
-├── docs/                # Technical documentation
-├── scripts/             # Development automation scripts
-├── .github/             # CI/CD workflows
-├── docker-compose.yml   # Local development environment
-└── MONOREPO-GUIDE.md    # Detailed monorepo documentation
-```
-
-### Boilerplates Used
-
-- **Mobile**: [Flutter Riverpod Clean Architecture](https://github.com/ssoad/flutter_riverpod_clean_architecture)
-- **Backend**: [FastAPI Boilerplate](https://github.com/benavlabs/FastAPI-boilerplate)
-
-## 📖 Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [GETTING-STARTED.md](./GETTING-STARTED.md) | Complete setup guide for development |
-| [MONOREPO-GUIDE.md](./MONOREPO-GUIDE.md) | Monorepo organization and best practices |
-| [TECH-STACK.md](./TECH-STACK.md) | Technology stack details and rationale |
-| [PROJECT-OVERVIEW.md](./PROJECT-OVERVIEW.md) | Project overview and roadmap |
-| [docs/](./docs/) | Technical specifications, diagrams, architecture |
-
-## 🚀 Quick Commands
+### First-Time Setup
 
 ```bash
-# Setup development environment
-./scripts/setup-dev.sh
+# Run database migrations
+cd apps/backend/src
+alembic upgrade head
 
-# Run all services
-docker-compose up
-
-# Run tests
-./scripts/test-all.sh
-
-# Start mobile app
-cd apps/mobile && flutter run
-
-# Start backend
-cd apps/backend && uvicorn app.main:app --reload
+# (Optional) Create a superuser
+docker-compose run --rm backend python -m app.scripts.create_superuser
 ```
 
-## Project Status
+---
 
-**Phase**: Ready for Development  
-**Next Steps**: 
-1. Clone the boilerplates into `apps/` folders
-2. Integrate with project requirements
-3. Implement MVP features (Phase 1)
+## Project Structure — Mobile
+
+```
+apps/mobile/lib/
+├── core/
+│   ├── theme/           # App palette and theme definitions
+│   ├── router/          # GoRouter configuration and guards
+│   ├── network/         # Dio client, interceptors
+│   ├── storage/         # Hive, SharedPreferences, SecureStorage wrappers
+│   └── ...
+├── features/
+│   ├── auth/            # Login, registration, biometric auth
+│   ├── home/            # Recipes tab, Planning tab, Category management
+│   ├── chat/            # WebSocket chat
+│   ├── survey/          # Onboarding survey
+│   ├── settings/        # Theme, language, accessibility
+│   └── ui_showcase/     # Component gallery (dev)
+└── main.dart
+```
+
+## Project Structure — Backend
+
+```
+apps/backend/src/app/
+├── api/v1/          # Route handlers (auth, users, recipes, categories, meal-plan, upload)
+├── core/            # Config, DB session, security, utils
+├── crud/            # fastcrud operation wrappers
+├── models/          # SQLAlchemy ORM models
+├── schemas/         # Pydantic request/response schemas
+├── middleware/       # CORS, logging, Redis cache
+└── admin/           # CRUDAdmin interface (mounted at /admin)
+```
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [docs/01-requirements.md](./docs/01-requirements.md) | Functional & non-functional requirements |
+| [docs/02-uml-diagrams.md](./docs/02-uml-diagrams.md) | Use case, class, activity, state diagrams |
+| [docs/03-sequence-diagrams.md](./docs/03-sequence-diagrams.md) | Sequence diagrams for key flows |
+| [docs/04-database-schema.md](./docs/04-database-schema.md) | Database ERD and schema |
+| [docs/05-architecture.md](./docs/05-architecture.md) | System architecture |
+| [docs/06-tech-stack-guide.md](./docs/06-tech-stack-guide.md) | Technology stack evaluation |
+| [docs/07-figma-design-reference.md](./docs/07-figma-design-reference.md) | Design system and UI components |
+| [MONOREPO-GUIDE.md](./MONOREPO-GUIDE.md) | Monorepo organization and conventions |
+
+## Design
+
+**Figma File**: [View in Figma](https://www.figma.com/make/zYcBkRQoCvYTxrCIS8yiHZ/Recipe-and-Shopping-Organizer?fullscreen=1&t=n9UskWVIBXlHV4cO-1)
+
+The file includes: recipe category grid, category management, video import modal, weekly meal planning calendar, shopping list interface, recipe creation form, and the full design system (color palette, typography, components).
+
+---
+
+## Common Commands
+
+```bash
+# Start all services (Docker)
+docker-compose up
+
+# Run Flutter app
+cd apps/mobile && flutter run
+
+# Run backend with hot reload
+cd apps/backend/src && uvicorn app.main:app --reload
+
+# Run Flutter tests
+cd apps/mobile && flutter test
+
+# Lint backend
+cd apps/backend && ruff check . && mypy .
+
+# Generate Flutter code (Riverpod, Freezed, JSON)
+cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
+```
 
 ## License
-
-[To be determined]
-
-## Contact
 
 [To be determined]
