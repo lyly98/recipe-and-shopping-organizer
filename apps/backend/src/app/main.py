@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from .admin.initialize import create_admin_interface
 from .api import router
@@ -28,7 +28,7 @@ async def lifespan_with_admin(app: FastAPI) -> AsyncGenerator[None, None]:
         if admin:
             # Initialize admin database and setup.
             # Under multi-worker startup, concurrent creation of the initial
-            # admin account can race; treat duplicate username as already initialized.
+            # admin account or admin tables can race; treat duplicates as already initialized.
             try:
                 await admin.initialize()
             except IntegrityError as exc:
@@ -36,11 +36,22 @@ async def lifespan_with_admin(app: FastAPI) -> AsyncGenerator[None, None]:
                 if "UNIQUE constraint failed: admin_user.username" not in message:
                     raise
                 logger.warning("Admin user already exists; continuing startup.")
+            except OperationalError as exc:
+                message = str(exc.orig) if getattr(exc, "orig", None) else str(exc)
+                if "already exists" not in message:
+                    raise
+                logger.warning("Admin table already exists; continuing startup.")
 
         yield
 
 
 app = create_application(router=router, settings=settings, lifespan=lifespan_with_admin)
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> dict[str, str]:
+    return {"status": "ok"}
+
 
 # Serve uploaded recipe images at /static/uploads/...
 static_dir = Path(__file__).resolve().parent.parent.parent / "static"

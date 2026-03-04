@@ -132,6 +132,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             tooltip: 'Modifier la recette',
             onPressed: () => _openEditModal(context, recipe, isDark, categoryItems),
           ),
+          IconButton(
+            icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+            tooltip: 'Supprimer la recette',
+            onPressed: () => _confirmDelete(context, recipe.id, isDark),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -251,6 +256,36 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         ),
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context, String recipeId, bool isDark) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la recette'),
+        content: const Text('Cette action est irréversible. Voulez-vous vraiment supprimer cette recette ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(ctx).colorScheme.error),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    ).then((confirmed) async {
+      if (confirmed != true) return;
+      final err = await ref.read(recipesProvider.notifier).removeRecipe(recipeId);
+      if (!mounted) return;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      } else {
+        context.pop();
+      }
+    });
   }
 
   Future<void> _openEditModal(

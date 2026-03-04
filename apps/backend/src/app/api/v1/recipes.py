@@ -323,15 +323,28 @@ async def delete_recipe(
 ) -> None:
     """Delete a recipe (authenticated, owner only).
 
-    This will cascade delete all ingredients and preparation steps.
+    Manually removes ingredients and preparation steps first because the
+    foreign key constraints have no ON DELETE CASCADE at the DB level.
     """
     db_recipe = await crud_recipes.get(db=db, id=recipe_id)
     if db_recipe is None:
         raise NotFoundException("Recipe not found")
 
-    # Check ownership
     if str(db_recipe["user_id"]) != str(current_user["uuid"]):
         raise ForbiddenException("You can only delete your own recipes")
+
+    # Delete child rows first to satisfy the FK constraints
+    existing_ingredients = await crud_ingredients.get_multi(
+        db=db, recipe_id=recipe_id, schema_to_select=IngredientRead
+    )
+    for ing in existing_ingredients.get("data", []):
+        await crud_ingredients.delete(db=db, id=ing["id"])
+
+    existing_steps = await crud_preparation_steps.get_multi(
+        db=db, recipe_id=recipe_id, schema_to_select=PreparationStepRead
+    )
+    for step in existing_steps.get("data", []):
+        await crud_preparation_steps.delete(db=db, id=step["id"])
 
     await crud_recipes.delete(db=db, id=recipe_id)
 

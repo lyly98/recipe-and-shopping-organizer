@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_clean_architecture/core/constants/app_constants.dart';
 import 'package:flutter_riverpod_clean_architecture/core/theme/app_palette.dart';
 import 'package:flutter_riverpod_clean_architecture/core/utils/app_utils.dart';
 import 'package:flutter_riverpod_clean_architecture/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/planning_tab_screen.dart';
 import 'package:flutter_riverpod_clean_architecture/features/home/presentation/screens/recipes_tab_screen.dart';
-import 'package:go_router/go_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -82,7 +80,15 @@ class _HomeScreenBodyState extends State<_HomeScreenBody>
                   ? AppPalette.darkPastelOnBackground
                   : AppPalette.darkGray,
             ),
-            onPressed: () => context.push(AppConstants.profileRoute),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('🚧 Profil — bientôt disponible'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: Icon(
