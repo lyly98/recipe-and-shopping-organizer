@@ -5,7 +5,7 @@ class AppConstants {
   // - Android Emulator: run with --dart-define=API_HOST=10.0.2.2
   // - Physical Android: run with --dart-define=API_HOST=YOUR_MAC_IP (e.g. 192.168.1.10)
   static String get apiBaseUrl =>
-      'http://${const String.fromEnvironment('API_HOST', defaultValue: 'localhost')}:8000';
+      const String.fromEnvironment('API_HOST', defaultValue: 'http://localhost:8000');
 
   /// Resolves a recipe image URL so it uses the current API host (works on device/emulator).
   /// Pass a stored URL (e.g. http://localhost:8000/static/uploads/...) or a path (/static/uploads/...).
