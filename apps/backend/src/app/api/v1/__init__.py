@@ -8,6 +8,7 @@ from .meal_plan import router as meal_plan_router
 from .recipes import router as recipes_router
 from .upload import router as upload_router
 from .users import router as users_router
+from .video_import import router as video_import_router
 
 router = APIRouter(prefix="/v1")
 
@@ -22,3 +23,4 @@ router.include_router(categories_router)
 router.include_router(recipes_router)
 router.include_router(upload_router)
 router.include_router(meal_plan_router)
+router.include_router(video_import_router)
