@@ -35,10 +35,14 @@ class _ImportFromLinkModalState extends State<ImportFromLinkModal> {
   }
 
   void _transcrire() {
-    final link = _linkController.text.trim();
-    if (link.isEmpty) return;
-    Navigator.of(context).pop();
-    // TODO: call API to transcribe recipe from link
+    // Feature not yet implemented — no API endpoint exists
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('🚧 Fonctionnalité en cours de développement'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -108,6 +112,32 @@ class _ImportFromLinkModalState extends State<ImportFromLinkModal> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppPalette.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppPalette.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.construction, color: AppPalette.white, size: 14),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'En cours de développement',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppPalette.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -155,10 +185,10 @@ class _ImportFromLinkModalState extends State<ImportFromLinkModal> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _PlatformChip(label: 'TikTok', onTap: () {}),
-                          _PlatformChip(label: 'Instagram', onTap: () {}),
-                          _PlatformChip(label: 'YouTube', onTap: () {}),
-                          _PlatformChip(label: 'Facebook', onTap: () {}),
+                          _PlatformChip(label: 'TikTok'),
+                          _PlatformChip(label: 'Instagram'),
+                          _PlatformChip(label: 'YouTube'),
+                          _PlatformChip(label: 'Facebook'),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -166,10 +196,10 @@ class _ImportFromLinkModalState extends State<ImportFromLinkModal> {
                         height: 48,
                         child: ElevatedButton.icon(
                           onPressed: _transcrire,
-                          icon: const Text('✨', style: TextStyle(fontSize: 18)),
-                          label: const Text('Transcrire la recette'),
+                          icon: const Icon(Icons.construction, size: 18),
+                          label: const Text('Transcrire la recette — Bientôt disponible'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: pink,
+                            backgroundColor: pink.withValues(alpha: 0.45),
                             foregroundColor: AppPalette.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -201,16 +231,18 @@ class _ImportFromLinkModalState extends State<ImportFromLinkModal> {
 }
 
 class _PlatformChip extends StatelessWidget {
-  const _PlatformChip({required this.label, required this.onTap});
+  const _PlatformChip({required this.label});
 
   final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
+    return Chip(
       label: Text(label),
-      onPressed: onTap,
+      labelStyle: TextStyle(
+        color: Theme.of(context).disabledColor,
+        fontSize: 13,
+      ),
     );
   }
 }

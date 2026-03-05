@@ -388,10 +388,36 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: Icon(Icons.spellcheck, color: pink),
-                            tooltip: 'Corriger l\'orthographe',
+                          Tooltip(
+                            message: 'Bientôt disponible',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: null,
+                                  icon: Icon(
+                                    Icons.spellcheck,
+                                    color: pink.withValues(alpha: 0.35),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: pink.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: pink.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Text(
+                                    'Bientôt',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: pink.withValues(alpha: 0.6),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           const Spacer(),
                           TextButton(
