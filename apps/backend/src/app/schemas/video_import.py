@@ -1,7 +1,7 @@
 """Schemas for the video import / transcription feature."""
 from typing import Any, Literal
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 
 class VideoImportRequest(BaseModel):
