@@ -8,13 +8,13 @@ from arq.worker import check_health, run_worker
 
 from ...core.config import settings
 from ...core.logger import logging  # noqa: F401
-from .functions import on_job_end, on_job_start, sample_background_task, shutdown, startup
+from .functions import on_job_end, on_job_start, sample_background_task, shutdown, startup, transcribe_video_task
 
 REDIS_QUEUE_URL = settings.REDIS_QUEUE_URL
 
 
 class WorkerSettings:
-    functions = [sample_background_task]
+    functions = [sample_background_task, transcribe_video_task]
     redis_settings = RedisSettings.from_dsn(REDIS_QUEUE_URL)
     on_startup = startup
     on_shutdown = shutdown

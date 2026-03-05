@@ -176,6 +176,10 @@ class CRUDAdminSettings(BaseSettings):
     CRUD_ADMIN_REDIS_SSL: bool = False
 
 
+class GeminiSettings(BaseSettings):
+    GEMINI_API_KEY: SecretStr = SecretStr("")
+
+
 class EnvironmentOption(str, Enum):
     LOCAL = "local"
     STAGING = "staging"
@@ -209,6 +213,7 @@ class Settings(
     CORSSettings,
     FileLoggerSettings,
     ConsoleLoggerSettings,
+    GeminiSettings,
 ):
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", ".env"),

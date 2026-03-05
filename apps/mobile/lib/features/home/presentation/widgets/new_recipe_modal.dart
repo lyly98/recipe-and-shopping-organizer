@@ -97,7 +97,11 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
   int _servings = 1;
   final _picker = ImagePicker();
 
-  bool get _isEditing => widget.existingRecipe != null;
+  // True only when editing an already-saved recipe (non-empty server id).
+  // Pre-filled imports have id == '' and are treated as new recipes.
+  bool get _isEditing =>
+      widget.existingRecipe != null &&
+      widget.existingRecipe!.id.isNotEmpty;
 
   List<CategoryItem> get _categories =>
       widget.categoryItems.isNotEmpty ? widget.categoryItems : [const CategoryItem(id: '', name: 'Plats', emoji: '🍽️')];
@@ -206,11 +210,35 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
     }
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     final titre = _titreController.text.trim();
-    if (titre.isEmpty) return;
-    final categoryId = _selectedCategoryId ??
-        (_categories.isNotEmpty && _categories.first.id.isNotEmpty ? _categories.first.id : null);
+    if (titre.isEmpty) {
+      _showError('Le titre est obligatoire');
+      return;
+    }
+    if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
+      _showError('Veuillez choisir une catégorie');
+      return;
+    }
+    final hasIngredient = _ingredients.any(
+      (e) => e.nameController.text.trim().isNotEmpty,
+    );
+    if (!hasIngredient) {
+      _showError('Ajoutez au moins un ingrédient');
+      return;
+    }
+    final categoryId = _selectedCategoryId!;
 
     final ingredientMaps = <Map<String, dynamic>>[];
     for (var i = 0; i < _ingredients.length; i++) {
@@ -248,7 +276,7 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
     }
 
     final err = await widget.onSave({
-      'id': widget.existingRecipe?.id,
+      'id': _isEditing ? widget.existingRecipe?.id : null,
       'title': titre,
       'categoryId': categoryId,
       'mealUsage': _motCleController.text.trim().isEmpty ? null : _motCleController.text.trim(),
@@ -333,14 +361,14 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildLabel('Titre'),
+                      _buildLabel('Titre', required: true),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _titreController,
                         decoration: _inputDecoration(context, isDark, 'Ex. Tarte aux pommes'),
                       ),
                       const SizedBox(height: 16),
-                      _buildLabel('Catégorie'),
+                      _buildLabel('Catégorie', required: true),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         value: _selectedCategoryId,
@@ -365,7 +393,7 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
                       const SizedBox(height: 8),
                       _buildServingsStepper(isDark, orange),
                       const SizedBox(height: 20),
-                      _buildLabel('Ingrédients'),
+                      _buildLabel('Ingrédients', required: true),
                       const SizedBox(height: 4),
                       _buildIngredientHeader(isDark, onBg),
                       const SizedBox(height: 4),
@@ -660,15 +688,19 @@ class _NewRecipeModalState extends State<NewRecipeModal> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, {bool required = false}) {
     final isDark = widget.isDark;
     final onBg = isDark ? AppPalette.darkPastelOnBackground : AppPalette.darkGray;
-    return Text(
-      text,
-      style: TextStyle(
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-        color: onBg,
+    if (!required) {
+      return Text(text, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: onBg));
+    }
+    return RichText(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: onBg),
+        children: const [
+          TextSpan(text: ' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }

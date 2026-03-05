@@ -94,8 +94,36 @@ class RecipesTabScreen extends ConsumerWidget {
                       child: SizedBox(
                         height: 48,
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            ImportFromLinkModal.show(context, isDark: isDark);
+                          onPressed: () async {
+                            final entity = await ImportFromLinkModal.show(
+                              context,
+                              isDark: isDark,
+                            );
+                            if (entity != null && context.mounted) {
+                              final categories = categoriesAsync.value ?? [];
+                              final items = categoriesToItems(categories);
+                              NewRecipeModal.show(
+                                context,
+                                isDark: isDark,
+                                categoryItems: items,
+                                existingRecipe: entity,
+                                uploadImage: (path) async {
+                                  final repo = ref.read(recipeRepositoryProvider);
+                                  final result = await repo.uploadRecipeImage(path);
+                                  return result.fold((_) => null, (url) => url);
+                                },
+                                onSave: (params) =>
+                                    ref.read(recipesProvider.notifier).addRecipe(
+                                          title: params['title'] as String? ?? '',
+                                          categoryId: _nullableString(params['categoryId']),
+                                          mealUsage: _nullableString(params['mealUsage']),
+                                          servings: (params['servings'] as int?) ?? 1,
+                                          imageUrls: _toStringList(params['imageUrls']),
+                                          ingredients: _toMapList(params['ingredients']),
+                                          preparationSteps: _toMapList(params['preparationSteps']),
+                                        ),
+                              );
+                            }
                           },
                           icon: const Icon(Icons.link, size: 18),
                           label: const Text('Depuis un lien'),
