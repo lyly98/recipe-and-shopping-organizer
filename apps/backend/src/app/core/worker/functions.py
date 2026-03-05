@@ -142,7 +142,8 @@ def _call_gemini_sync(audio_path: str, language: str, api_key: str) -> dict[str,
         "When true, fill every field accurately.\n"
         "IMPORTANT — the only allowed values for 'unit' are: "
         '"g", "kg", "mL", "L", "tasse", "c. à s.", "c. à c.", "pièce(s)", or "" (empty string for unitless). '
-        "You MUST convert every non-standard unit to the closest allowed unit with an accurate numeric quantity. Examples:\n"
+        "You MUST convert every non-standard unit to the closest allowed unit with an accurate "
+        "numeric quantity. Examples:\n"
         "- '1 pot de yaourt (125 g)' → quantity: '125', unit: 'g'\n"
         "- '1 pot de sucre (using the yaourt pot as measure, ~125 g)' → quantity: '125', unit: 'g'\n"
         "- '1 pot de farine (~100 g)' → quantity: '100', unit: 'g'\n"
@@ -157,9 +158,11 @@ def _call_gemini_sync(audio_path: str, language: str, api_key: str) -> dict[str,
         "- 'servings': if not mentioned, infer from the total ingredient quantities and typical portion sizes "
         "(e.g. 500 g of pasta with sauce → 4 servings; a single yaourt cake → 6–8 servings).\n"
         "- 'title': infer from the ingredients and technique if not stated.\n"
-        "- ingredient quantities: estimate from visual cues, standard recipe conventions, or typical amounts if not clearly stated.\n"
+        "- ingredient quantities: estimate from visual cues, standard recipe conventions, or "
+        "typical amounts if not clearly stated.\n"
         "Never leave a field null or 0; always provide a reasonable value. "
-        "Output all text in French. If you cannot detect a recipe, return an empty ingredients list and a single step explaining what you heard."
+        "Output all text in French. If you cannot detect a recipe, return an empty ingredients list "
+        "and a single step explaining what you heard."
     )
 
     response = model.generate_content(
