@@ -23,6 +23,15 @@ class ReadyCheck(BaseModel):
     timestamp: str
 
 
+class DebugCheck(BaseModel):
+    """Production-safe flags only (no secrets). Use for debugging on Render."""
+
+    redis_configured: bool
+    gemini_configured: bool
+    queue_redis_reachable: bool
+    environment: str
+
+
 # -------------- mixins --------------
 class UUIDSchema(BaseModel):
     uuid: uuid_pkg.UUID = Field(default_factory=uuid7)

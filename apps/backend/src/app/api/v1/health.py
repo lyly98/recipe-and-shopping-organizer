@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.config import settings
 from ...core.db.database import async_get_db
 from ...core.health import check_database_health, check_redis_health
-from ...core.schemas import HealthCheck, ReadyCheck
+from ...core.schemas import DebugCheck, HealthCheck, ReadyCheck
 from ...core.utils.cache import async_get_redis
 
 router = APIRouter(tags=["health"])
@@ -55,3 +55,35 @@ async def ready(redis: Annotated[Redis, Depends(async_get_redis)], db: Annotated
     }
 
     return JSONResponse(status_code=http_status, content=response)
+
+
+@router.get("/health/debug", response_model=DebugCheck)
+async def debug():
+    """
+    Production-safe debug flags (no secrets). Use on Render to verify:
+    - Redis and Gemini are configured
+    - Queue Redis (used by the worker) is reachable from this service.
+    """
+    redis_configured = bool(settings.REDIS_QUEUE_URL and settings.REDIS_QUEUE_URL.strip())
+    gemini_configured = bool(
+        settings.GEMINI_API_KEY.get_secret_value()
+        and settings.GEMINI_API_KEY.get_secret_value().strip()
+    )
+    queue_redis_reachable = False
+    if redis_configured:
+        try:
+            from redis.asyncio import from_url
+
+            client = from_url(settings.REDIS_QUEUE_URL)
+            await client.ping()
+            await client.aclose()
+            queue_redis_reachable = True
+        except Exception as e:
+            LOGGER.warning("Queue Redis ping failed: %s", e)
+
+    return DebugCheck(
+        redis_configured=redis_configured,
+        gemini_configured=gemini_configured,
+        queue_redis_reachable=queue_redis_reachable,
+        environment=settings.ENVIRONMENT.value,
+    )
