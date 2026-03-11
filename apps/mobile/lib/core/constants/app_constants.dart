@@ -8,13 +8,18 @@ class AppConstants {
       const String.fromEnvironment('API_HOST', defaultValue: 'http://localhost:8000');
 
   /// Resolves a recipe image URL so it uses the current API host (works on device/emulator).
-  /// Pass a stored URL (e.g. http://localhost:8000/static/uploads/...) or a path (/static/uploads/...).
+  /// - Relative path (/static/uploads/...) → prepend current API base.
+  /// - Absolute URL to another host (e.g. CDN thumbnail) → return as-is.
+  /// - Absolute URL to the API host → rewrite to current base + path.
   static String? resolveRecipeImageUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     final base = apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
     if (url.startsWith('http://') || url.startsWith('https://')) {
       try {
         final uri = Uri.parse(url);
+        final baseUri = Uri.parse(base);
+        // External host (e.g. CDN thumbnail from video import) → use as-is
+        if (uri.host != baseUri.host) return url;
         return '$base${uri.path}${uri.query.isNotEmpty ? '?${uri.query}' : ''}';
       } catch (_) {
         return url;

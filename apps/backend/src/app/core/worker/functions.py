@@ -224,10 +224,15 @@ async def transcribe_video_task(ctx: Worker, url: str, language: str) -> dict[st
             "Veuillez fournir un lien vers une vidéo culinaire."
         )
 
-    # Download and save the thumbnail locally, then attach its server URL
+    # Thumbnail: on Render the worker and web are separate instances, so a file
+    # saved by the worker is not served by the web app. Use the platform CDN URL
+    # so the image loads in the app. Locally we save to static/uploads and serve it.
     if thumbnail_url:
-        local_url = await asyncio.to_thread(_save_thumbnail_sync, thumbnail_url)
-        recipe_data["thumbnail_url"] = local_url or thumbnail_url  # CDN fallback
+        if os.environ.get("RENDER"):
+            recipe_data["thumbnail_url"] = thumbnail_url
+        else:
+            local_url = await asyncio.to_thread(_save_thumbnail_sync, thumbnail_url)
+            recipe_data["thumbnail_url"] = local_url or thumbnail_url
 
     return recipe_data
 
